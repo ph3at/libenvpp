@@ -58,6 +58,8 @@ unset(CMAKE_FOLDER)
 # libenvpp library.
 set(LIBENVPP_SOURCES
 	"source/libenvpp.cpp"
+	"source/levenshtein.cpp"
+	"source/levenshtein.hpp"
 )
 
 # Add includes to library so they show up in IDEs.
@@ -77,6 +79,7 @@ if(LIBENVPP_TESTS)
 	include(CTest)
 	add_executable(libenvpp_tests
 		"test/libenvpp_test.cpp"
+		"test/levenshtein_test.cpp"
 	)
 	libenvpp_set_compiler_parameters(libenvpp_tests)
 	target_link_libraries(libenvpp_tests PRIVATE libenvpp Catch2::Catch2WithMain)
