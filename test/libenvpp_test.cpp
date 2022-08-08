@@ -5,6 +5,39 @@
 
 #include <libenvpp.hpp>
 
+namespace env {
+
+struct option_testspy {
+	template <typename T>
+	static const std::set<T>& get_options(const env::option<T>& option)
+	{
+		return option.m_options;
+	}
+};
+
+TEST_CASE("Options are set and duplicates detected", "[libenvpp]")
+{
+	auto pre = env::prefix("TEST");
+	auto opt = pre.register_option<int>("OPTION").options({1, 2});
+	const auto& options = option_testspy::get_options(opt);
+
+	CHECK(options.size() == 2);
+	CHECK(options.find(1) != options.end());
+	CHECK(options.find(2) != options.end());
+	CHECK(options.find(0) == options.end());
+
+	opt.set_options({});
+	CHECK(options.empty());
+
+	opt.set_options({-7, 7});
+	CHECK(options.size() == 2);
+	CHECK(options.find(-7) != options.end());
+	CHECK(options.find(7) != options.end());
+	CHECK(options.find(0) == options.end());
+
+	CHECK_THROWS_AS(opt.set_options({0, 0}), duplicate_option);
+}
+
 TEST_CASE("Constructors and move semantics", "[libenvpp]")
 {
 	auto pre = env::prefix("FOO");
@@ -51,3 +84,5 @@ TEST_CASE("Interface", "[libenvpp]")
 		}
 	}
 }
+
+} // namespace env

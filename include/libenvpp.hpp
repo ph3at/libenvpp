@@ -137,6 +137,7 @@ class option : public detail::var_base<T, option> {
 	std::set<T> m_options;
 
 	friend prefix;
+	friend struct option_testspy;
 };
 
 template <typename T>
@@ -156,6 +157,7 @@ class var : public detail::var_base<T, var>,
 	{}
 
 	friend prefix;
+	friend struct var_testspy;
 };
 
 class validation_result {
@@ -219,6 +221,7 @@ class prefix {
 
 	template <typename T, template <typename> typename Derived>
 	friend class detail::var_base;
+	friend struct prefix_testspy;
 };
 
 namespace detail {
