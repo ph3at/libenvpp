@@ -23,7 +23,7 @@ class empty_base {};
 template <typename T, template <typename> typename Derived>
 class arithmetic_base {
   public:
-	Derived<T>&& range(const T min, const T max) noexcept
+	[[nodiscard]] Derived<T>&& range(const T min, const T max) && noexcept
 	{
 		set_range(min, max);
 		return std::move(*static_cast<Derived<T>*>(this));
@@ -66,7 +66,7 @@ class var_base {
 
 	~var_base();
 
-	Derived<T>&& required() noexcept
+	[[nodiscard]] Derived<T>&& required() && noexcept
 	{
 		set_required(true);
 		return std::move(*static_cast<Derived<T>*>(this));
@@ -116,7 +116,7 @@ class option : public detail::var_base<T, option> {
 	option& operator=(const option&) = delete;
 	option& operator=(option&&) = default;
 
-	option&& options(const std::initializer_list<T> options_list)
+	[[nodiscard]] option&& options(const std::initializer_list<T> options_list) &&
 	{
 		set_options(options_list);
 		return std::move(*this);
