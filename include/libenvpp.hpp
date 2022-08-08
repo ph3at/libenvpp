@@ -14,6 +14,8 @@
 
 namespace env {
 
+class prefix;
+
 class duplicate_option : public std::invalid_argument {
   public:
 	duplicate_option() : std::invalid_argument("Same option specified more than once") {}
@@ -21,41 +23,15 @@ class duplicate_option : public std::invalid_argument {
 
 namespace detail {
 
-enum class variable_type_tag { variable, option };
-
 class empty_base {};
 
-template <typename T, variable_type_tag VarType, template <typename, variable_type_tag> typename Var>
-class option_base {
-	using base_type = Var<T, VarType>;
-
-  public:
-	base_type&& options(const std::initializer_list<T> options_list)
-	{
-		set_options(options_list);
-		return std::move(*static_cast<base_type*>(this));
-	}
-	void set_options(const std::initializer_list<T> options_list)
-	{
-		m_options = options_list;
-		if (m_options.size() != options_list.size()) {
-			throw duplicate_option{};
-		}
-	}
-
-  protected:
-	std::set<T> m_options;
-};
-
-template <typename T, template <typename, variable_type_tag> typename Var>
+template <typename T, template <typename> typename Derived>
 class arithmetic_base {
-	using base_type = Var<T, variable_type_tag::variable>;
-
   public:
-	base_type&& range(const T min, const T max) noexcept
+	Derived<T>&& range(const T min, const T max) noexcept
 	{
 		set_range(min, max);
-		return std::move(*static_cast<base_type*>(this));
+		return std::move(*static_cast<Derived<T>*>(this));
 	}
 	void set_range(const T min, const T max) noexcept
 	{
@@ -64,27 +40,26 @@ class arithmetic_base {
 	}
 
   protected:
+	arithmetic_base() = default;
+	arithmetic_base(const arithmetic_base&) = delete;
+	arithmetic_base(arithmetic_base&&) = default;
+
+	arithmetic_base& operator=(const arithmetic_base&) = delete;
+	arithmetic_base& operator=(arithmetic_base&&) = default;
+
 	T m_min = std::numeric_limits<T>::lowest();
 	T m_max = std::numeric_limits<T>::max();
 };
 
-} // namespace detail
-
-class prefix;
-
-template <typename T, detail::variable_type_tag VarType>
-class var : public std::conditional_t<VarType == detail::variable_type_tag::option, //
-                                      detail::option_base<T, VarType, var>,
-                                      std::conditional_t<std::is_arithmetic_v<T>,         //
-                                                         detail::arithmetic_base<T, var>, //
-                                                         detail::empty_base>> {
+template <typename T, template <typename> typename Derived>
+class var_base {
   public:
-	var() = delete;
-	var(const var&) = delete;
-	var(var&& other) noexcept { *this = std::move(other); }
+	var_base() = delete;
+	var_base(const var_base&) = delete;
+	var_base(var_base&& other) noexcept { *this = std::move(other); }
 
-	var& operator=(const var&) = delete;
-	var& operator=(var&& other) noexcept
+	var_base& operator=(const var_base&) = delete;
+	var_base& operator=(var_base&& other) noexcept
 	{
 		m_name = std::move(other.m_name);
 		m_id = other.m_id;
@@ -94,22 +69,20 @@ class var : public std::conditional_t<VarType == detail::variable_type_tag::opti
 		return *this;
 	}
 
-	~var();
+	~var_base();
 
-	var&& required() noexcept
+	Derived<T>&& required() noexcept
 	{
 		set_required(true);
-		return std::move(*this);
+		return std::move(*static_cast<Derived<T>*>(this));
 	}
 	void set_required(const bool is_required) noexcept { m_is_required = is_required; }
 
 	[[nodiscard]] std::optional<T> get() { return {}; }
 	[[nodiscard]] T get_or(const T default_value) { return {}; }
 
-	void set_for_testing(const T value) {}
-
-  private:
-	var(const std::string_view name, const std::size_t id, prefix& prefix_instance)
+  protected:
+	var_base(const std::string_view name, const std::size_t id, prefix& prefix_instance)
 	    : m_name(name), m_id(id), m_prefix_instance(&prefix_instance)
 	{}
 
@@ -117,8 +90,60 @@ class var : public std::conditional_t<VarType == detail::variable_type_tag::opti
 	std::size_t m_id;
 	prefix* m_prefix_instance = nullptr;
 	bool m_is_required = false;
+};
 
-	friend class prefix;
+} // namespace detail
+
+template <typename T>
+class option : public detail::var_base<T, option> {
+  public:
+	option() = delete;
+	option(const option&) = delete;
+	option(option&&) = default;
+
+	option& operator=(const option&) = delete;
+	option& operator=(option&&) = default;
+
+	option&& options(const std::initializer_list<T> options_list)
+	{
+		set_options(options_list);
+		return std::move(*this);
+	}
+	void set_options(const std::initializer_list<T> options_list)
+	{
+		m_options = options_list;
+		if (m_options.size() != options_list.size()) {
+			throw duplicate_option{};
+		}
+	}
+
+  private:
+	option(const std::string_view name, const std::size_t id, prefix& prefix_instance)
+	    : detail::var_base<T, option>(name, id, prefix_instance)
+	{}
+
+	std::set<T> m_options;
+
+	friend prefix;
+};
+
+template <typename T>
+class var : public detail::var_base<T, var>,
+            public std::conditional_t<std::is_arithmetic_v<T>, detail::arithmetic_base<T, var>, detail::empty_base> {
+  public:
+	var() = delete;
+	var(const var&) = delete;
+	var(var&&) = default;
+
+	var& operator=(const var&) = delete;
+	var& operator=(var&&) = default;
+
+  private:
+	var(const std::string_view name, const std::size_t id, prefix& prefix_instance)
+	    : detail::var_base<T, var>(name, id, prefix_instance)
+	{}
+
+	friend prefix;
 };
 
 class parser_error : public std::runtime_error {
@@ -169,14 +194,14 @@ class prefix {
 	~prefix() { assert(m_registered_vars.empty() && "prefix object is being destroyed while var objects still exist"); }
 
 	template <typename T>
-	[[nodiscard]] var<T, detail::variable_type_tag::variable> register_variable(const std::string_view name)
+	[[nodiscard]] var<T> register_variable(const std::string_view name)
 	{
 		m_registered_vars.insert(m_id_counter);
 		return {name, m_id_counter++, *this};
 	}
 
 	template <typename T>
-	[[nodiscard]] var<T, detail::variable_type_tag::option> register_option(const std::string_view name)
+	[[nodiscard]] option<T> register_option(const std::string_view name)
 	{
 		m_registered_vars.insert(m_id_counter);
 		return {name, m_id_counter++, *this};
@@ -192,16 +217,20 @@ class prefix {
 	std::size_t m_id_counter = 0;
 	std::set<std::size_t> m_registered_vars;
 
-	template <typename T, detail::variable_type_tag VarType>
-	friend class var;
+	template <typename T, template <typename> typename Derived>
+	friend class detail::var_base;
 };
 
-template <typename T, detail::variable_type_tag VarType>
-var<T, VarType>::~var()
+namespace detail {
+
+template <typename T, template <typename> typename Derived>
+var_base<T, Derived>::~var_base()
 {
 	if (m_prefix_instance) {
 		m_prefix_instance->m_registered_vars.erase(m_id);
 	}
 }
+
+} // namespace detail
 
 } // namespace env

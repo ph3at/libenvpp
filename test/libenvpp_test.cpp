@@ -11,10 +11,15 @@ TEST_CASE("Constructors and move semantics", "[libenvpp]")
 	auto var = pre.register_variable<int>("BAR");
 
 	auto moved_var = std::move(var);
+	moved_var.set_range(0, 16);
 	var = std::move(moved_var);
 
 	auto moved_pre = std::move(pre);
 	pre = std::move(moved_pre);
+
+	auto opt = pre.register_option<std::string>("BAZ").options({"ASDF", "QWERT"}).required();
+	auto moved_opt = std::move(opt);
+	opt = std::move(moved_opt);
 }
 
 TEST_CASE("Interface", "[libenvpp]")
