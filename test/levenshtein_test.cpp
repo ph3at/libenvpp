@@ -1,6 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "../source/levenshtein.hpp"
+#include <levenshtein.hpp>
+#include <libenvpp_check.hpp>
 
 TEST_CASE("Empty input", "[levenshtein]")
 {
@@ -50,7 +51,7 @@ TEST_CASE("Reversed strings", "[levenshtein]")
 
 TEST_CASE("Cutoff distance", "[levenshtein]")
 {
-	CHECK_THROWS_AS(levenshtein::distance("a", "b", -1), levenshtein::invalid_cutoff);
+	CHECK_THROWS_AS(levenshtein::distance("a", "b", -1), env::detail::check_failed);
 	CHECK(levenshtein::distance("a", "b", 0) == 0);
 	CHECK(levenshtein::distance("Hello World", "Hello World", 7) == 0);
 	CHECK(levenshtein::distance("Hello World", "HelloWorld", 1) == 1);
@@ -60,7 +61,7 @@ TEST_CASE("Cutoff distance", "[levenshtein]")
 
 TEST_CASE("Less than wrapper", "[levenshtein]")
 {
-	CHECK_THROWS_AS(levenshtein::is_distance_less_than("a", "b", -5), levenshtein::invalid_cutoff);
+	CHECK_THROWS_AS(levenshtein::is_distance_less_than("a", "b", -5), env::detail::check_failed);
 	CHECK(levenshtein::is_distance_less_than("", "", 1));
 	CHECK(levenshtein::is_distance_less_than("a", "a", 1));
 	CHECK_FALSE(levenshtein::is_distance_less_than("a", "b", 1));

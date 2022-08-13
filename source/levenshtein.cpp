@@ -4,6 +4,8 @@
 #include <cassert>
 #include <vector>
 
+#include <libenvpp_check.hpp>
+
 namespace levenshtein {
 
 bool is_distance_less_than(std::string_view lhs, std::string_view rhs, const int cutoff_distance)
@@ -15,9 +17,7 @@ bool is_distance_less_than(std::string_view lhs, std::string_view rhs, const int
 int distance(std::string_view lhs, std::string_view rhs,
              const int cutoff_distance /*= std::numeric_limits<int>::max()*/)
 {
-	if (cutoff_distance < 0) {
-		throw invalid_cutoff{};
-	}
+	LIBENVPP_CHECK(cutoff_distance >= 0);
 
 	auto lhs_size = static_cast<int>(lhs.length());
 	auto rhs_size = static_cast<int>(rhs.length());

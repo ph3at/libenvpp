@@ -6,11 +6,6 @@
 
 namespace levenshtein {
 
-class invalid_cutoff : public std::invalid_argument {
-  public:
-	invalid_cutoff() : std::invalid_argument("Cutoff distance must be positive integer") {}
-};
-
 // Checks whether the levenshtein distance between 'lhs' and 'rhs' is (strictly) less than 'cutoff_distance'.
 bool is_distance_less_than(std::string_view lhs, std::string_view rhs, const int cutoff_distance);
 

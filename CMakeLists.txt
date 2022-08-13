@@ -20,7 +20,8 @@ if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
 	set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>DLL)
 endif()
 
-option(LIBENVPP_TESTS "Build libenvpp tests" ${LIBENVPP_MASTER_PROJECT})
+option(LIBENVPP_TESTS "Build libenvpp tests." ${LIBENVPP_MASTER_PROJECT})
+option(LIBENVPP_CHECKS "Enable additional runtime checks in release (always on in debug)." OFF)
 
 include(cmake/libenvpp_mt_utils.cmake)
 
@@ -40,6 +41,8 @@ function(libenvpp_set_compiler_parameters TARGET)
 		$<$<CXX_COMPILER_ID:MSVC>:/DEBUG /ignore:4099>
 	)
 	target_compile_definitions(${TARGET} PUBLIC
+		$<$<OR:$<BOOL:${LIBENVPP_CHECKS}>,$<CONFIG:DEBUG>>:LIBENVPP_CHECKS_ENABLED>
+		$<$<BOOL:${LIBENVPP_TESTS}>:LIBENVPP_TESTS_ENABLED>
 		$<$<BOOL:${WIN32}>:LIBENVPP_PLATFORM_WINDOWS>
 	)
 endfunction()
@@ -59,7 +62,6 @@ unset(CMAKE_FOLDER)
 set(LIBENVPP_SOURCES
 	"source/libenvpp.cpp"
 	"source/levenshtein.cpp"
-	"source/levenshtein.hpp"
 )
 
 # Add includes to library so they show up in IDEs.
