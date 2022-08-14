@@ -44,6 +44,7 @@ function(libenvpp_set_compiler_parameters TARGET)
 		$<$<OR:$<BOOL:${LIBENVPP_CHECKS}>,$<CONFIG:DEBUG>>:LIBENVPP_CHECKS_ENABLED>
 		$<$<BOOL:${LIBENVPP_TESTS}>:LIBENVPP_TESTS_ENABLED>
 		$<$<BOOL:${WIN32}>:LIBENVPP_PLATFORM_WINDOWS>
+		$<$<BOOL:${UNIX}>:LIBENVPP_PLATFORM_UNIX>
 	)
 endfunction()
 
@@ -60,8 +61,10 @@ unset(CMAKE_FOLDER)
 
 # libenvpp library.
 set(LIBENVPP_SOURCES
-	"source/libenvpp.cpp"
 	"source/levenshtein.cpp"
+	"source/libenvpp_env_unix.cpp"
+	"source/libenvpp_env_windows.cpp"
+	"source/libenvpp.cpp"
 )
 
 # Add includes to library so they show up in IDEs.
@@ -81,8 +84,9 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${LIBENVPP_SOURCES} ${LIBENV
 if(LIBENVPP_TESTS)
 	include(CTest)
 	add_executable(libenvpp_tests
-		"test/libenvpp_test.cpp"
 		"test/levenshtein_test.cpp"
+		"test/libenvpp_env_test.cpp"
+		"test/libenvpp_test.cpp"
 	)
 	libenvpp_set_compiler_parameters(libenvpp_tests)
 	target_link_libraries(libenvpp_tests PRIVATE libenvpp Catch2::Catch2WithMain)
