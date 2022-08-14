@@ -1,10 +1,16 @@
 #pragma once
 
+#include <algorithm>
+#include <any>
 #include <cassert>
 #include <cstddef>
+#include <cstdlib>
+#include <functional>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -12,82 +18,11 @@
 #include <utility>
 #include <vector>
 
+#include <fmt/core.h>
+
 namespace env {
 
 class prefix;
-
-namespace detail {
-
-class empty_base {};
-
-template <typename T, template <typename> typename Derived>
-class arithmetic_base {
-  public:
-	[[nodiscard]] Derived<T>&& range(const T min, const T max) && noexcept
-	{
-		set_range(min, max);
-		return std::move(*static_cast<Derived<T>*>(this));
-	}
-	void set_range(const T min, const T max) noexcept
-	{
-		m_min = min;
-		m_max = max;
-	}
-
-  protected:
-	arithmetic_base() = default;
-	arithmetic_base(const arithmetic_base&) = delete;
-	arithmetic_base(arithmetic_base&&) = default;
-
-	arithmetic_base& operator=(const arithmetic_base&) = delete;
-	arithmetic_base& operator=(arithmetic_base&&) = default;
-
-	T m_min = std::numeric_limits<T>::lowest();
-	T m_max = std::numeric_limits<T>::max();
-};
-
-template <typename T, template <typename> typename Derived>
-class var_base {
-  public:
-	var_base() = delete;
-	var_base(const var_base&) = delete;
-	var_base(var_base&& other) noexcept { *this = std::move(other); }
-
-	var_base& operator=(const var_base&) = delete;
-	var_base& operator=(var_base&& other) noexcept
-	{
-		m_name = std::move(other.m_name);
-		m_id = other.m_id;
-		m_prefix_instance = other.m_prefix_instance;
-		m_is_required = other.m_is_required;
-		other.m_prefix_instance = nullptr;
-		return *this;
-	}
-
-	~var_base();
-
-	[[nodiscard]] Derived<T>&& required() && noexcept
-	{
-		set_required(true);
-		return std::move(*static_cast<Derived<T>*>(this));
-	}
-	void set_required(const bool is_required) noexcept { m_is_required = is_required; }
-
-	[[nodiscard]] std::optional<T> get() { return {}; }
-	[[nodiscard]] T get_or(const T default_value) { return {}; }
-
-  protected:
-	var_base(const std::string_view name, const std::size_t id, prefix& prefix_instance)
-	    : m_name(name), m_id(id), m_prefix_instance(&prefix_instance)
-	{}
-
-	std::string m_name;
-	std::size_t m_id;
-	prefix* m_prefix_instance = nullptr;
-	bool m_is_required = false;
-};
-
-} // namespace detail
 
 class duplicate_option : public std::invalid_argument {
   public:
@@ -106,62 +41,88 @@ class unrecognized_option : public std::runtime_error {
 	unrecognized_option(const std::string_view message) : std::runtime_error(std::string(message)) {}
 };
 
-template <typename T>
-class option : public detail::var_base<T, option> {
+namespace detail {
+
+enum class variable_type {
+	variable,
+	range,
+	option,
+};
+
+template <typename T, variable_type VariableType, bool IsRequired>
+class variable_id {
   public:
-	option() = delete;
-	option(const option&) = delete;
-	option(option&&) = default;
+	using value_type = T;
+	static constexpr auto var_type = VariableType;
+	static constexpr auto is_required = IsRequired;
 
-	option& operator=(const option&) = delete;
-	option& operator=(option&&) = default;
+	variable_id() = delete;
+	variable_id(const variable_id&) = delete;
+	variable_id(variable_id&&) = default;
 
-	[[nodiscard]] option&& options(const std::initializer_list<T> options_list) &&
+	variable_id& operator=(const variable_id&) = delete;
+	variable_id& operator=(variable_id&&) = default;
+
+  private:
+	variable_id(const std::size_t idx) : m_idx(idx) {}
+
+	const std::size_t m_idx;
+
+	friend prefix;
+	template <typename Prefix>
+	friend class validated_prefix;
+};
+
+class variable_data {
+  public:
+	using parser_fn_type = std::function<std::any(const std::string_view)>;
+	using validator_fn_type = std::function<std::string(std::any)>;
+
+	variable_data() = delete;
+
+	variable_data(const variable_data&) = delete;
+	variable_data(variable_data&&) = default;
+
+	variable_data& operator=(const variable_data&) = delete;
+	variable_data& operator=(variable_data&&) = default;
+
+  private:
+	variable_data(const std::string_view name, parser_fn_type parser_fn, validator_fn_type validator_fn)
+	    : m_name(name), m_parser_fn(parser_fn), m_validator_fn(validator_fn)
+	{}
+
+	const std::string m_name;
+	parser_fn_type m_parser_fn;
+	validator_fn_type m_validator_fn;
+	std::any m_value;
+
+	friend prefix;
+	template <typename Prefix>
+	friend class validated_prefix;
+};
+
+// Templated to resolve mutual dependency
+template <typename Prefix>
+class validated_prefix {
+  public:
+	validated_prefix() = delete;
+
+	validated_prefix(const validated_prefix&) = delete;
+	validated_prefix(validated_prefix&&) = default;
+
+	validated_prefix& operator=(const validated_prefix&) = delete;
+	validated_prefix& operator=(validated_prefix&&) = default;
+
+	template <typename T, detail::variable_type VariableType, bool IsRequired>
+	auto get(const detail::variable_id<T, VariableType, IsRequired>& var_id)
 	{
-		set_options(options_list);
-		return std::move(*this);
-	}
-	void set_options(const std::initializer_list<T> options_list)
-	{
-		m_options = options_list;
-		if (m_options.size() != options_list.size()) {
-			throw duplicate_option{};
+		if constexpr (IsRequired) {
+			return std::any_cast<T>(m_prefix.m_registered_vars[var_id.m_idx].m_value);
+		} else {
+			return std::optional<T>{std::any_cast<T>(m_prefix.m_registered_vars[var_id.m_idx].m_value)};
 		}
 	}
 
-  private:
-	option(const std::string_view name, const std::size_t id, prefix& prefix_instance)
-	    : detail::var_base<T, option>(name, id, prefix_instance)
-	{}
-
-	std::set<T> m_options;
-
-	friend prefix;
-	friend struct option_testspy;
-};
-
-template <typename T>
-class var : public detail::var_base<T, var>,
-            public std::conditional_t<std::is_arithmetic_v<T>, detail::arithmetic_base<T, var>, detail::empty_base> {
-  public:
-	var() = delete;
-	var(const var&) = delete;
-	var(var&&) = default;
-
-	var& operator=(const var&) = delete;
-	var& operator=(var&&) = default;
-
-  private:
-	var(const std::string_view name, const std::size_t id, prefix& prefix_instance)
-	    : detail::var_base<T, var>(name, id, prefix_instance)
-	{}
-
-	friend prefix;
-	friend struct var_testspy;
-};
-
-class validation_result {
-  public:
 	[[nodiscard]] bool ok() const noexcept { return m_errors.empty() && m_warnings.empty(); }
 	[[nodiscard]] std::string error_message() const { return {}; }
 	[[nodiscard]] std::string warning_message() const { return {}; }
@@ -170,70 +131,107 @@ class validation_result {
 	[[nodiscard]] const std::vector<unrecognized_option>& warnings() const { return m_warnings; }
 
   private:
+	validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
+	{
+		for (auto& var : m_prefix.m_registered_vars) {
+			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
+			const auto env_var_value = "7TODO";
+			var.m_value = var.m_parser_fn(env_var_value);
+			const auto err = var.m_validator_fn(var.m_value);
+			if (!err.empty()) {
+				m_errors.emplace_back(fmt::format("Variable '{}' with error '{}'", env_var_name, err));
+			}
+		}
+	}
+
+	Prefix m_prefix;
 	std::vector<parser_error> m_errors;
 	std::vector<unrecognized_option> m_warnings;
+
+	friend prefix;
 };
 
+} // namespace detail
+
 class prefix {
+	template <typename T>
+	static std::string default_variable_validator(const std::optional<T>&)
+	{
+		return {};
+	}
+
   public:
 	prefix() = delete;
 	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 2)
 	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
 	{}
 	prefix(const prefix&) = delete;
-	prefix(prefix&& other) noexcept { *this = std::move(other); }
+	prefix(prefix&&) = default;
 
 	prefix& operator=(const prefix&) = delete;
-	prefix& operator=(prefix&& other) noexcept
+	prefix& operator=(prefix&&) = default;
+
+	~prefix() = default;
+
+	template <typename T, typename ValidatorFn = decltype(default_variable_validator<T>)>
+	[[nodiscard]] auto register_variable(const std::string_view name,
+	                                     ValidatorFn validator_fn = default_variable_validator<T>)
 	{
-		m_prefix_name = std::move(other.m_prefix_name);
-		m_edit_distance_cutoff = other.m_edit_distance_cutoff;
-		m_id_counter = other.m_id_counter;
-		m_registered_vars = std::move(other.m_registered_vars);
-		return *this;
+		m_registered_vars.push_back(detail::variable_data{name,
+		                                                  [](const std::string_view env_value) -> std::any {
+			                                                  auto stream_converter =
+			                                                      std::istringstream(std::string(env_value));
+			                                                  T parsed_value;
+			                                                  stream_converter >> parsed_value;
+			                                                  if (stream_converter.fail()) {
+				                                                  return {};
+			                                                  }
+			                                                  return {parsed_value};
+		                                                  },
+		                                                  [validator_fn](std::any variable_value) -> std::string {
+			                                                  if (variable_value.has_value()) {
+				                                                  return validator_fn(std::any_cast<T>(variable_value));
+			                                                  }
+			                                                  return validator_fn({});
+		                                                  }});
+		return detail::variable_id<T, detail::variable_type::variable, false>{m_registered_vars.size() - 1};
 	}
 
-	~prefix() { assert(m_registered_vars.empty() && "prefix object is being destroyed while var objects still exist"); }
-
-	template <typename T>
-	[[nodiscard]] var<T> register_variable(const std::string_view name)
+	template <typename T, typename ValidatorFn = decltype(default_variable_validator<T>)>
+	[[nodiscard]] auto register_required_variable(const std::string_view name,
+	                                              ValidatorFn validator_fn = default_variable_validator<T>)
 	{
-		m_registered_vars.insert(m_id_counter);
-		return {name, m_id_counter++, *this};
+		m_registered_vars.push_back(detail::variable_data{name,
+		                                                  [](const std::string_view env_value) -> std::any {
+			                                                  auto stream_converter =
+			                                                      std::istringstream(std::string(env_value));
+			                                                  T parsed_value;
+			                                                  stream_converter >> parsed_value;
+			                                                  if (stream_converter.fail()) {
+				                                                  return {};
+			                                                  }
+			                                                  return {parsed_value};
+		                                                  },
+		                                                  [validator_fn](std::any variable_value) -> std::string {
+			                                                  if (variable_value.has_value()) {
+				                                                  return validator_fn(std::any_cast<T>(variable_value));
+			                                                  }
+			                                                  return "Missing required value";
+		                                                  }});
+		return detail::variable_id<T, detail::variable_type::variable, true>{m_registered_vars.size() - 1};
 	}
 
-	template <typename T>
-	[[nodiscard]] option<T> register_option(const std::string_view name)
-	{
-		m_registered_vars.insert(m_id_counter);
-		return {name, m_id_counter++, *this};
-	}
-
-	[[nodiscard]] validation_result validate() { return {}; }
+	[[nodiscard]] detail::validated_prefix<prefix> validate() { return {std::move(*this)}; }
 
 	[[nodiscard]] std::string help_message() const { return {}; }
 
   private:
 	std::string m_prefix_name;
 	int m_edit_distance_cutoff;
-	std::size_t m_id_counter = 0;
-	std::set<std::size_t> m_registered_vars;
+	std::vector<detail::variable_data> m_registered_vars;
 
-	template <typename T, template <typename> typename Derived>
-	friend class detail::var_base;
-	friend struct prefix_testspy;
+	template <typename Prefix>
+	friend class detail::validated_prefix;
 };
-
-namespace detail {
-
-template <typename T, template <typename> typename Derived>
-var_base<T, Derived>::~var_base()
-{
-	if (m_prefix_instance) {
-		m_prefix_instance->m_registered_vars.erase(m_id);
-	}
-}
-
-} // namespace detail
 
 } // namespace env
