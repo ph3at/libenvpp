@@ -45,6 +45,25 @@ TEST_CASE("Setting environment variables", "[libenvpp_env]")
 	delete_environment_variable(test_var_name);
 }
 
+TEST_CASE("Overwriting environment variables", "[libenvpp_env]")
+{
+	constexpr auto test_var_name = "LIBENVPP_TESTING_OVERWRITE";
+	constexpr auto test_var_value = "Foo";
+	constexpr auto overwrite_value = "Bar";
+
+	set_environment_variable(test_var_name, test_var_value);
+	const auto var = get_environment_variable(test_var_name);
+	REQUIRE(var.has_value());
+	CHECK_THAT(*var, Equals(test_var_value));
+
+	set_environment_variable(test_var_name, overwrite_value);
+	const auto overwritten_var = get_environment_variable(test_var_name);
+	REQUIRE(overwritten_var.has_value());
+	CHECK_THAT(*overwritten_var, Equals(overwrite_value));
+
+	delete_environment_variable(test_var_name);
+}
+
 TEST_CASE("Getting environment variables", "[libenvpp_env]")
 {
 	constexpr auto test_var_name = "LIBENVPP_TESTING_GET";
