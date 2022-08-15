@@ -95,4 +95,40 @@ TEST_CASE("Environment contains set variables", "[libenvpp_env]")
 	CHECK_THAT(environment.at(test_var_name), Equals(test_var_value));
 }
 
+TEST_CASE("Character encoding for variable names", "[libenvpp_env]")
+{
+	constexpr auto test_var_name = "LIBENVPP_TESTING_🍌";
+	constexpr auto test_var_value = "banana";
+
+	const auto _ = set_scoped_environment_variable{test_var_name, test_var_value};
+
+	const auto test_var = get_environment_variable(test_var_name);
+	REQUIRE(test_var.has_value());
+	CHECK_THAT(*test_var, Equals(test_var_value));
+
+	const auto environment = get_environment();
+	REQUIRE_FALSE(environment.empty());
+
+	REQUIRE(environment.find(test_var_name) != environment.end());
+	CHECK_THAT(environment.at(test_var_name), Equals(test_var_value));
+}
+
+TEST_CASE("Character encoding for variable values", "[libenvpp_env]")
+{
+	constexpr auto test_var_name = "LIBENVPP_TESTING_BANANA";
+	constexpr auto test_var_value = "->🍌<-";
+
+	const auto _ = set_scoped_environment_variable{test_var_name, test_var_value};
+
+	const auto test_var = get_environment_variable(test_var_name);
+	REQUIRE(test_var.has_value());
+	CHECK_THAT(*test_var, Equals(test_var_value));
+
+	const auto environment = get_environment();
+	REQUIRE_FALSE(environment.empty());
+
+	REQUIRE(environment.find(test_var_name) != environment.end());
+	CHECK_THAT(environment.at(test_var_name), Equals(test_var_value));
+}
+
 } // namespace env::detail
