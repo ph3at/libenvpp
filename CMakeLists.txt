@@ -86,6 +86,7 @@ if(LIBENVPP_TESTS)
 	add_executable(libenvpp_tests
 		"test/levenshtein_test.cpp"
 		"test/libenvpp_env_test.cpp"
+		"test/libenvpp_parser_test.cpp"
 		"test/libenvpp_test.cpp"
 	)
 	libenvpp_set_compiler_parameters(libenvpp_tests)
