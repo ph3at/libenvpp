@@ -1,11 +1,16 @@
 #pragma once
 
+#include <exception>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
+
+#include <fmt/core.h>
+
+#include <libenvpp_util.hpp>
 
 namespace env::detail {
 
@@ -56,5 +61,48 @@ struct is_stringstream_constructible<T,
 
 template <typename T>
 inline constexpr auto is_stringstream_constructible_v = is_stringstream_constructible<T>::value;
+
+//////////////////////////////////////////////////////////////////////////
+
+template <typename T>
+std::string construct_from_string(const std::string_view str, std::optional<T>& value)
+{
+	try {
+		value.reset();
+
+		if constexpr (is_string_constructible_v<T>) {
+			value = T(str);
+		} else if constexpr (has_from_string_mem_fn_v<T>) {
+			if constexpr (std::is_same_v<decltype(T::from_string(str, value)), std::string>) {
+				return T::from_string(str, value);
+			} else {
+				T::from_string(str, value);
+			}
+		} else if constexpr (has_from_string_fn_v<T>) {
+			if constexpr (std::is_same_v<decltype(from_string(str, value)), std::string>) {
+				return from_string(str, value);
+			} else {
+				from_string(str, value);
+			}
+		} else if constexpr (is_stringstream_constructible_v<T>) {
+			auto stream = std::istringstream(std::string(str));
+			T parsed;
+			stream >> parsed;
+			if (!stream.fail()) {
+				value = parsed;
+			}
+		} else {
+			static_assert(
+			    util::always_false_v<T>,
+			    "Type is not constructible from string. Implement one of the supported conversion mechanisms.");
+		}
+	} catch (std::exception& e) {
+		return fmt::format("Failed to construct object from string '{}' due to exception '{}'", str, e.what());
+	} catch (...) {
+		return fmt::format("Unknown exception occurred when constructing object from string '{}'", str);
+	}
+
+	return value.has_value() ? std::string{} : fmt::format("Failed to construct object from string '{}'", str);
+}
 
 } // namespace env::detail
