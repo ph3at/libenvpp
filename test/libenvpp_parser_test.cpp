@@ -1,11 +1,12 @@
-#include <catch2/catch_test_macros.hpp>
-
 #include <charconv>
 #include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <libenvpp_parser.hpp>
 #include <libenvpp_util.hpp>
@@ -19,6 +20,8 @@ static_assert(env::detail::has_from_string_fn_v<from_string_able> == true);
 } // namespace adl::test
 
 namespace env::detail {
+
+using Catch::Matchers::ContainsSubstring;
 
 struct string_constructible_0 {};
 
@@ -371,7 +374,6 @@ class string_constructible {
 };
 
 struct from_string_able {
-
 	bool operator==(const from_string_able& other) const { return m_str == other.m_str; }
 
 	std::string m_str;
@@ -381,10 +383,128 @@ void from_string(const std::string_view str, std::optional<from_string_able>& va
 	value = from_string_able{std::string(str)};
 }
 
+struct stream_constructible {
+	bool operator==(const stream_constructible& other) const { return m_str == other.m_str; }
+
+	std::string m_str;
+};
+std::istringstream& operator>>(std::istringstream& stream, stream_constructible& value)
+{
+	stream >> value.m_str;
+	return stream;
+}
+
 TEST_CASE("Parsing well-formed input of user-defined type", "[libenvpp_parser]")
 {
 	test_parser<string_constructible>("foo", string_constructible{"foo"});
 	test_parser<from_string_able>("bar", from_string_able{"bar"});
+	test_parser<stream_constructible>("baz", stream_constructible{"baz"});
+}
+
+template <typename T>
+void test_parser_error(const std::string_view str)
+{
+	auto value = std::optional<T>{};
+	const auto err = construct_from_string(str, value);
+	CHECK_FALSE(value.has_value());
+	CHECK_FALSE(err.empty());
+	CHECK_THAT(err, ContainsSubstring(std::string(str)));
+}
+
+TEST_CASE("Parsing ill-formed input of primitive type", "[libenvpp_parser]")
+{
+	test_parser_error<bool>("");
+	test_parser_error<bool>(" ");
+	test_parser_error<bool>("a");
+	test_parser_error<bool>("true");
+	test_parser_error<bool>("false");
+
+	test_parser_error<short>("");
+	test_parser_error<short>(" ");
+	test_parser_error<short>("a");
+	test_parser_error<short>("z");
+	test_parser_error<short>("-123456");
+	test_parser_error<short>("123456");
+	test_parser_error<unsigned short>("123456");
+
+	test_parser_error<int>("-12345678901");
+	test_parser_error<int>("12345678901");
+	test_parser_error<unsigned int>("12345678901");
+
+	test_parser_error<long>("-123456789012345678901");
+	test_parser_error<long>("123456789012345678901");
+	test_parser_error<unsigned long>("123456789012345678901");
+
+	test_parser_error<long long>("-123456789012345678901");
+	test_parser_error<long long>("123456789012345678901");
+	test_parser_error<unsigned long long>("123456789012345678901");
+
+	test_parser_error<float>("a");
+
+	test_parser_error<double>("b");
+}
+
+struct not_string_constructible_0 {
+	not_string_constructible_0(const std::string_view) { throw 0; }
+};
+
+struct not_string_constructible_1 {
+	not_string_constructible_1(const std::string_view) { throw std::runtime_error{"Unconstructible"}; }
+};
+
+struct not_from_string_able_0 {};
+void from_string(const std::string_view, std::optional<not_from_string_able_0>&) {}
+
+struct not_from_string_able_1 {};
+void from_string(const std::string_view, std::optional<not_from_string_able_1>&)
+{
+	throw 0;
+}
+
+struct not_from_string_able_2 {};
+void from_string(const std::string_view, std::optional<not_from_string_able_2>&)
+{
+	throw std::runtime_error{"Unconstructible"};
+}
+
+struct not_from_string_able_3 {};
+std::string from_string(const std::string_view str, std::optional<not_from_string_able_3>&)
+{
+	return fmt::format("Not constructible from '{}'", str);
+}
+
+struct not_stream_constructible_0 {};
+std::istringstream& operator>>(std::istringstream& stream, not_stream_constructible_0&)
+{
+	stream.setstate(std::ios_base::failbit);
+	return stream;
+}
+
+struct not_stream_constructible_1 {};
+std::istringstream& operator>>(std::istringstream&, not_stream_constructible_1&)
+{
+	throw 0;
+}
+
+struct not_stream_constructible_2 {};
+std::istringstream& operator>>(std::istringstream&, not_stream_constructible_2&)
+{
+	throw std::runtime_error{"Unconstructible"};
+}
+
+TEST_CASE("Parsing ill-formed input of user-defined type", "[libenvpp_parser]")
+{
+	test_parser_error<not_string_constructible_0>("don't care");
+	test_parser_error<not_string_constructible_1>("don't care");
+
+	test_parser_error<not_from_string_able_0>("don't care");
+	test_parser_error<not_from_string_able_1>("don't care");
+	test_parser_error<not_from_string_able_2>("don't care");
+	test_parser_error<not_from_string_able_3>("don't care");
+
+	test_parser_error<not_stream_constructible_0>("don't care");
+	test_parser_error<not_stream_constructible_1>("don't care");
+	test_parser_error<not_stream_constructible_2>("don't care");
 }
 
 } // namespace env::detail
