@@ -58,53 +58,6 @@ static_assert(is_string_constructible_v<float> == false);
 
 //////////////////////////////////////////////////////////////////////////
 
-struct from_string_mem_able_0 {};
-
-struct from_string_mem_able_1 {
-	static from_string_mem_able_1 from_string(std::string);
-};
-
-struct from_string_mem_able_2 {
-	static from_string_mem_able_2 from_string(std::string_view);
-};
-
-struct from_string_mem_able_3 {
-	static from_string_mem_able_3 from_string(char*);
-};
-
-struct from_string_mem_able_4 {
-	static from_string_mem_able_4 from_string(int);
-};
-
-struct from_string_mem_able_5 {
-	static from_string_mem_able_5 from_string(const std::string&);
-};
-
-struct from_string_mem_able_6 {
-	static from_string_mem_able_6 from_string(std::string&);
-};
-
-struct from_string_mem_able_7 {
-	static from_string_mem_able_7 from_string(const std::string_view&);
-};
-
-struct from_string_mem_able_8 {
-	static from_string_mem_able_8 from_string(std::string_view&);
-};
-
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_0> == false);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_1> == true);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_2> == true);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_3> == false);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_4> == false);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_5> == true);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_6> == false);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_7> == true);
-static_assert(has_from_string_mem_fn_v<from_string_mem_able_8> == false);
-static_assert(has_from_string_mem_fn_v<int> == false);
-
-//////////////////////////////////////////////////////////////////////////
-
 enum from_string_able_0 {};
 enum class from_string_able_1 {};
 
@@ -144,12 +97,56 @@ void from_string(const std::string_view str, std::optional<from_string_able_5>& 
 	}
 }
 
+struct from_string_able_6 {};
+void from_string(const std::string_view, std::optional<from_string_able_6>);
+
+struct from_string_able_7 {};
+void from_string(std::string_view, std::optional<from_string_able_7>&);
+
+struct from_string_able_8 {};
+void from_string(const std::string_view&, std::optional<from_string_able_8>&);
+
+struct from_string_able_9 {};
+void from_string(std::string_view&, std::optional<from_string_able_9>&);
+
+struct from_string_able_10 {};
+void from_string(std::string, std::optional<from_string_able_10>&);
+
+struct from_string_able_11 {};
+void from_string(const std::string, std::optional<from_string_able_11>&);
+
+struct from_string_able_12 {};
+void from_string(std::string&, std::optional<from_string_able_12>&);
+
+struct from_string_able_13 {};
+void from_string(const std::string&, std::optional<from_string_able_13>&);
+
+struct from_string_able_14 {};
+void from_string(const std::string_view, const std::optional<from_string_able_14>&);
+
+struct from_string_able_15 {};
+void from_string(const std::string_view, std::optional<from_string_able_15>&&);
+
+struct from_string_able_16 {};
+std::string from_string(const std::string_view, std::optional<from_string_able_16>&);
+
 static_assert(has_from_string_fn_v<from_string_able_0> == false);
 static_assert(has_from_string_fn_v<from_string_able_1> == false);
 static_assert(has_from_string_fn_v<from_string_able_2> == true);
 static_assert(has_from_string_fn_v<from_string_able_3> == true);
 static_assert(has_from_string_fn_v<from_string_able_4> == false);
 static_assert(has_from_string_fn_v<from_string_able_5> == true);
+static_assert(has_from_string_fn_v<from_string_able_6> == false);
+static_assert(has_from_string_fn_v<from_string_able_7> == true);
+static_assert(has_from_string_fn_v<from_string_able_8> == true);
+static_assert(has_from_string_fn_v<from_string_able_9> == false);
+static_assert(has_from_string_fn_v<from_string_able_10> == true);
+static_assert(has_from_string_fn_v<from_string_able_11> == true);
+static_assert(has_from_string_fn_v<from_string_able_12> == false);
+static_assert(has_from_string_fn_v<from_string_able_13> == true);
+static_assert(has_from_string_fn_v<from_string_able_14> == false);
+static_assert(has_from_string_fn_v<from_string_able_15> == false);
+static_assert(has_from_string_fn_v<from_string_able_16> == true);
 static_assert(has_from_string_fn_v<int> == false);
 
 TEST_CASE("Parsing using free standing from_string function", "[libenvpp_parser]")
@@ -361,6 +358,33 @@ TEST_CASE("Parsing well-formed input of primitive type", "[libenvpp_parser]")
 	test_parser<std::string>("", "");
 	test_parser<std::string>("foo", "foo");
 	test_parser<std::string>("BAR", "BAR");
+}
+
+class string_constructible {
+  public:
+	string_constructible(const std::string_view str) : m_str(str) {}
+
+	bool operator==(const string_constructible& other) const { return m_str == other.m_str; }
+
+  private:
+	const std::string m_str;
+};
+
+struct from_string_able {
+
+	bool operator==(const from_string_able& other) const { return m_str == other.m_str; }
+
+	std::string m_str;
+};
+void from_string(const std::string_view str, std::optional<from_string_able>& value)
+{
+	value = from_string_able{std::string(str)};
+}
+
+TEST_CASE("Parsing well-formed input of user-defined type", "[libenvpp_parser]")
+{
+	test_parser<string_constructible>("foo", string_constructible{"foo"});
+	test_parser<from_string_able>("bar", from_string_able{"bar"});
 }
 
 } // namespace env::detail

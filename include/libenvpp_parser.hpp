@@ -26,25 +26,29 @@ inline constexpr auto is_string_constructible_v = is_string_constructible<T>::va
 
 //////////////////////////////////////////////////////////////////////////
 
-template <typename T, typename = void>
-struct has_from_string_mem_fn : std::false_type {};
-
-template <typename T>
-struct has_from_string_mem_fn<T, std::void_t<decltype(T::from_string(std::declval<std::string>()))>> : std::true_type {
-};
-
-template <typename T>
-inline constexpr auto has_from_string_mem_fn_v = has_from_string_mem_fn<T>::value;
-
-//////////////////////////////////////////////////////////////////////////
+namespace helper {
 
 template <typename T, typename = void>
-struct has_from_string_fn : std::false_type {};
+struct has_callable_from_string_fn : std::false_type {};
 
 template <typename T>
-struct has_from_string_fn<
+struct has_callable_from_string_fn<
     T, std::void_t<decltype(from_string(std::declval<std::string>(), std::declval<std::optional<T>&>()))>>
     : std::true_type {};
+
+template <typename T, typename = void>
+struct has_rvalue_callable_from_string_fn : std::false_type {};
+
+template <typename T>
+struct has_rvalue_callable_from_string_fn<
+    T, std::void_t<decltype(from_string(std::declval<std::string>(), std::declval<std::optional<T>&&>()))>>
+    : std::true_type {};
+
+} // namespace helper
+
+template <typename T>
+struct has_from_string_fn : std::conjunction<helper::has_callable_from_string_fn<T>,
+                                             std::negation<helper::has_rvalue_callable_from_string_fn<T>>> {};
 
 template <typename T>
 inline constexpr auto has_from_string_fn_v = has_from_string_fn<T>::value;
@@ -71,13 +75,7 @@ std::string construct_from_string(const std::string_view str, std::optional<T>& 
 		value.reset();
 
 		if constexpr (is_string_constructible_v<T>) {
-			value = T(str);
-		} else if constexpr (has_from_string_mem_fn_v<T>) {
-			if constexpr (std::is_same_v<decltype(T::from_string(str, value)), std::string>) {
-				return T::from_string(str, value);
-			} else {
-				T::from_string(str, value);
-			}
+			value.emplace(str);
 		} else if constexpr (has_from_string_fn_v<T>) {
 			if constexpr (std::is_same_v<decltype(from_string(str, value)), std::string>) {
 				return from_string(str, value);
@@ -94,9 +92,9 @@ std::string construct_from_string(const std::string_view str, std::optional<T>& 
 		} else {
 			static_assert(
 			    util::always_false_v<T>,
-			    "Type is not constructible from string. Implement one of the supported conversion mechanisms.");
+			    "Type is not constructible from string. Implement one of the supported construction mechanisms.");
 		}
-	} catch (std::exception& e) {
+	} catch (const std::exception& e) {
 		return fmt::format("Failed to construct object from string '{}' due to exception '{}'", str, e.what());
 	} catch (...) {
 		return fmt::format("Unknown exception occurred when constructing object from string '{}'", str);
