@@ -101,7 +101,7 @@ class variable_data {
 	friend class validated_prefix;
 };
 
-// Templated to resolve mutual dependency
+// Templated to resolve mutual dependency.
 template <typename Prefix>
 class validated_prefix {
   public:
@@ -154,13 +154,13 @@ class validated_prefix {
 } // namespace detail
 
 class prefix {
+  public:
 	template <typename T>
 	static std::string default_variable_validator(const std::optional<T>&)
 	{
 		return {};
 	}
 
-  public:
 	prefix() = delete;
 	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 2)
 	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
