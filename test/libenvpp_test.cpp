@@ -14,7 +14,19 @@ TEST_CASE("Interface", "[libenvpp]")
 {
 	auto pre = env::prefix("PREFIX");
 	const auto name_id = pre.register_variable<std::string>("NAME");
-	const auto nodes_id = pre.register_required_variable<int>("NODES");
+	[[maybe_unused]] const auto number_id =
+	    pre.register_variable<int>("NUMBER", env::default_parser{[](const int& val) {
+		                               if (val != 42) {
+			                               throw std::runtime_error{"Wrong!"};
+		                               }
+	                               }});
+	[[maybe_unused]] const auto string_id =
+	    pre.register_variable<std::string>("STRING", [](const std::string_view str) {
+		    if (str != "42") {
+			    throw std::runtime_error{"Wrong!"};
+		    }
+		    return std::string(str);
+	    });
 
 	auto validated_pre = pre.validate();
 
@@ -34,8 +46,6 @@ TEST_CASE("Interface", "[libenvpp]")
 
 	const auto name = validated_pre.get(name_id);
 	CHECK_THAT(*name, Equals("7TODO"));
-	const auto nodes = validated_pre.get(nodes_id);
-	CHECK(nodes == 7);
 }
 
 } // namespace env

@@ -20,6 +20,9 @@
 
 #include <fmt/core.h>
 
+#include <libenvpp_parser.hpp>
+#include <libenvpp_util.hpp>
+
 namespace env {
 
 class prefix;
@@ -75,8 +78,7 @@ class variable_id {
 
 class variable_data {
   public:
-	using parser_fn_type = std::function<std::any(const std::string_view)>;
-	using validator_fn_type = std::function<std::string(std::any)>;
+	using parse_and_validate_fn = std::function<std::any(const std::string_view)>;
 
 	variable_data() = delete;
 
@@ -87,13 +89,12 @@ class variable_data {
 	variable_data& operator=(variable_data&&) = default;
 
   private:
-	variable_data(const std::string_view name, parser_fn_type parser_fn, validator_fn_type validator_fn)
-	    : m_name(name), m_parser_fn(parser_fn), m_validator_fn(validator_fn)
+	variable_data(const std::string_view name, parse_and_validate_fn parser_and_validator)
+	    : m_name(name), m_parser_and_validator(parser_and_validator)
 	{}
 
 	const std::string m_name;
-	parser_fn_type m_parser_fn;
-	validator_fn_type m_validator_fn;
+	parse_and_validate_fn m_parser_and_validator;
 	std::any m_value;
 
 	friend prefix;
@@ -136,10 +137,10 @@ class validated_prefix {
 		for (auto& var : m_prefix.m_registered_vars) {
 			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
 			const auto env_var_value = "7TODO";
-			var.m_value = var.m_parser_fn(env_var_value);
-			const auto err = var.m_validator_fn(var.m_value);
-			if (!err.empty()) {
-				m_errors.emplace_back(fmt::format("Variable '{}' with error '{}'", env_var_name, err));
+			try {
+				var.m_value = var.m_parser_and_validator(env_var_value);
+			} catch (std::exception& e) {
+				m_errors.emplace_back(fmt::format("Variable '{}' with error '{}'", env_var_name, e.what()));
 			}
 		}
 	}
@@ -151,16 +152,54 @@ class validated_prefix {
 	friend prefix;
 };
 
+template <typename T>
+T make_from_string(const std::string_view str)
+{
+	auto value = T{};
+	auto stream = std::istringstream(std::string(str));
+	stream >> value;
+	if (stream.fail()) {
+		throw std::runtime_error{"Failed to create object from string"};
+	}
+	return value;
+}
+
 } // namespace detail
+
+template <typename T>
+struct default_validator {
+	void operator()(const T&) const {}
+};
+
+template <typename T>
+class default_parser {
+  public:
+	template <typename Validator>
+	default_parser(Validator validator) : m_validator(std::move(validator))
+	{}
+
+	T operator()(const std::string_view str) const
+	{
+		T value = detail::make_from_string<T>(str);
+		m_validator(value);
+		return value;
+	}
+
+  private:
+	std::function<void(const T&)> m_validator;
+};
+
+template <typename T>
+struct default_parser_and_validator {
+	T operator()(const std::string_view str) const { return default_parser<T>{default_validator<T>{}}(str); }
+};
+
+template <typename Validator>
+default_parser(Validator) -> default_parser<
+    std::remove_cv_t<std::remove_reference_t<typename detail::util::function_traits<Validator>::arg0_type>>>;
 
 class prefix {
   public:
-	template <typename T>
-	static std::string default_variable_validator(const std::optional<T>&)
-	{
-		return {};
-	}
-
 	prefix() = delete;
 	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 2)
 	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
@@ -173,52 +212,15 @@ class prefix {
 
 	~prefix() = default;
 
-	template <typename T, typename ValidatorFn = decltype(default_variable_validator<T>)>
+	template <typename T, typename ParserAndValidatorFn = decltype(default_parser_and_validator<T>{})>
 	[[nodiscard]] auto register_variable(const std::string_view name,
-	                                     ValidatorFn validator_fn = default_variable_validator<T>)
+	                                     ParserAndValidatorFn parser_and_validator = default_parser_and_validator<T>{})
 	{
-		m_registered_vars.push_back(detail::variable_data{name,
-		                                                  [](const std::string_view env_value) -> std::any {
-			                                                  auto stream_converter =
-			                                                      std::istringstream(std::string(env_value));
-			                                                  T parsed_value;
-			                                                  stream_converter >> parsed_value;
-			                                                  if (stream_converter.fail()) {
-				                                                  return {};
-			                                                  }
-			                                                  return {parsed_value};
-		                                                  },
-		                                                  [validator_fn](std::any variable_value) -> std::string {
-			                                                  if (variable_value.has_value()) {
-				                                                  return validator_fn(std::any_cast<T>(variable_value));
-			                                                  }
-			                                                  return validator_fn({});
-		                                                  }});
+		m_registered_vars.push_back(
+		    detail::variable_data{name, [parser_and_validator](const std::string_view env_value) -> std::any {
+			                          return parser_and_validator(env_value);
+		                          }});
 		return detail::variable_id<T, detail::variable_type::variable, false>{m_registered_vars.size() - 1};
-	}
-
-	template <typename T, typename ValidatorFn = decltype(default_variable_validator<T>)>
-	[[nodiscard]] auto register_required_variable(const std::string_view name,
-	                                              ValidatorFn validator_fn = default_variable_validator<T>)
-	{
-		m_registered_vars.push_back(detail::variable_data{name,
-		                                                  [](const std::string_view env_value) -> std::any {
-			                                                  auto stream_converter =
-			                                                      std::istringstream(std::string(env_value));
-			                                                  T parsed_value;
-			                                                  stream_converter >> parsed_value;
-			                                                  if (stream_converter.fail()) {
-				                                                  return {};
-			                                                  }
-			                                                  return {parsed_value};
-		                                                  },
-		                                                  [validator_fn](std::any variable_value) -> std::string {
-			                                                  if (variable_value.has_value()) {
-				                                                  return validator_fn(std::any_cast<T>(variable_value));
-			                                                  }
-			                                                  return "Missing required value";
-		                                                  }});
-		return detail::variable_id<T, detail::variable_type::variable, true>{m_registered_vars.size() - 1};
 	}
 
 	[[nodiscard]] detail::validated_prefix<prefix> validate() { return {std::move(*this)}; }
