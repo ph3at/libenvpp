@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <optional>
 #include <sstream>
@@ -10,6 +12,7 @@
 
 #include <fmt/core.h>
 
+#include <libenvpp_errors.hpp>
 #include <libenvpp_util.hpp>
 
 namespace env::detail {
@@ -26,35 +29,6 @@ inline constexpr auto is_string_constructible_v = is_string_constructible<T>::va
 
 //////////////////////////////////////////////////////////////////////////
 
-namespace helper {
-
-template <typename T, typename = void>
-struct has_callable_from_string_fn : std::false_type {};
-
-template <typename T>
-struct has_callable_from_string_fn<
-    T, std::void_t<decltype(from_string(std::declval<std::string>(), std::declval<std::optional<T>&>()))>>
-    : std::true_type {};
-
-template <typename T, typename = void>
-struct has_rvalue_callable_from_string_fn : std::false_type {};
-
-template <typename T>
-struct has_rvalue_callable_from_string_fn<
-    T, std::void_t<decltype(from_string(std::declval<std::string>(), std::declval<std::optional<T>&&>()))>>
-    : std::true_type {};
-
-} // namespace helper
-
-template <typename T>
-struct has_from_string_fn : std::conjunction<helper::has_callable_from_string_fn<T>,
-                                             std::negation<helper::has_rvalue_callable_from_string_fn<T>>> {};
-
-template <typename T>
-inline constexpr auto has_from_string_fn_v = has_from_string_fn<T>::value;
-
-//////////////////////////////////////////////////////////////////////////
-
 template <typename T, typename = void>
 struct is_stringstream_constructible : std::false_type {};
 
@@ -68,39 +42,60 @@ inline constexpr auto is_stringstream_constructible_v = is_stringstream_construc
 
 //////////////////////////////////////////////////////////////////////////
 
+class parser_error : public std::runtime_error {
+  public:
+	parser_error(const std::string_view message) : std::runtime_error(std::string(message)) {}
+};
+
 template <typename T>
-std::string construct_from_string(const std::string_view str, std::optional<T>& value)
+T construct_from_string(const std::string_view str)
 {
-	try {
-		value.reset();
-
-		if constexpr (is_string_constructible_v<T>) {
-			value.emplace(str);
-		} else if constexpr (has_from_string_fn_v<T>) {
-			if constexpr (std::is_same_v<decltype(from_string(str, value)), std::string>) {
-				return from_string(str, value);
-			} else {
-				from_string(str, value);
-			}
-		} else if constexpr (is_stringstream_constructible_v<T>) {
-			auto stream = std::istringstream(std::string(str));
-			T parsed;
-			stream >> parsed;
-			if (!stream.fail()) {
-				value = parsed;
-			}
-		} else {
-			static_assert(
-			    util::always_false_v<T>,
-			    "Type is not constructible from string. Implement one of the supported construction mechanisms.");
+	if constexpr (is_string_constructible_v<T>) {
+		try {
+			return T(std::string(str));
+		} catch (const parser_error&) {
+			throw;
+		} catch (const std::exception& e) {
+			throw parser_error{fmt::format("String constructor failed for input '{}' with '{}'", str, e.what())};
+		} catch (...) {
+			throw parser_error{fmt::format("String constructor failed for input '{}' with unknown error", str)};
 		}
-	} catch (const std::exception& e) {
-		return fmt::format("Failed to construct object from string '{}' due to exception '{}'", str, e.what());
-	} catch (...) {
-		return fmt::format("Unknown exception occurred when constructing object from string '{}'", str);
+	} else if constexpr (is_stringstream_constructible_v<T>) {
+		auto stream = std::istringstream(std::string(str));
+		T parsed;
+		try {
+			stream >> parsed;
+		} catch (const parser_error&) {
+			throw;
+		} catch (const std::exception& e) {
+			throw parser_error{fmt::format("Stream operator>> failed for input '{}' with '{}'", str, e.what())};
+		} catch (...) {
+			throw parser_error{fmt::format("Stream operator>> failed for input '{}' with unknown error", str)};
+		}
+		if (stream.fail()) {
+			throw parser_error{fmt::format("Stream operator>> failed for input '{}'", str)};
+		}
+		if (static_cast<std::size_t>(stream.tellg()) < str.size()) {
+			throw parser_error{fmt::format("Input '{}' was only parsed partially with remaining data '{}'", str,
+			                               stream.str().substr(stream.tellg()))};
+		}
+		if constexpr (std::is_unsigned_v<T>) {
+			auto signed_parsed = std::int64_t{};
+			auto signed_stream = std::istringstream(std::string(str));
+			signed_stream >> signed_parsed;
+			if (signed_stream.fail() || static_cast<std::size_t>(signed_stream.tellg()) < str.size()) {
+				throw parser_error{
+				    fmt::format("Failed to validate whether '{}' was correctly parsed as '{}'", str, parsed)};
+			}
+			if (signed_parsed < 0) {
+				throw parser_error{fmt::format("Cannot parse negative number '{}' as unsigned type", str)};
+			}
+		}
+		return parsed;
+	} else {
+		static_assert(util::always_false_v<T>,
+		              "Type is not constructible from string. Implement one of the supported construction mechanisms.");
 	}
-
-	return value.has_value() ? std::string{} : fmt::format("Failed to construct object from string '{}'", str);
 }
 
 } // namespace env::detail

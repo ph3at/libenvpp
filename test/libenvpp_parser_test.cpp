@@ -11,14 +11,6 @@
 #include <libenvpp_parser.hpp>
 #include <libenvpp_util.hpp>
 
-namespace adl::test {
-
-struct from_string_able {};
-void from_string(const std::string_view, std::optional<from_string_able>&);
-static_assert(env::detail::has_from_string_fn_v<from_string_able> == true);
-
-} // namespace adl::test
-
 namespace env::detail {
 
 using Catch::Matchers::ContainsSubstring;
@@ -58,138 +50,6 @@ static_assert(is_string_constructible_v<char*> == false);
 static_assert(is_string_constructible_v<bool> == false);
 static_assert(is_string_constructible_v<int> == false);
 static_assert(is_string_constructible_v<float> == false);
-
-//////////////////////////////////////////////////////////////////////////
-
-enum from_string_able_0 {};
-enum class from_string_able_1 {};
-
-enum from_string_able_2 { FROM_STRING_ENUM_VALUE };
-enum class from_string_able_3 { ENUM_CLASS_VALUE };
-
-void from_string(const std::string_view str, std::optional<from_string_able_2>& value)
-{
-	if (str == "FROM_STRING_ENUM_VALUE") {
-		value = from_string_able_2::FROM_STRING_ENUM_VALUE;
-	} else {
-		value = std::nullopt;
-	}
-}
-
-void from_string(const std::string_view str, std::optional<from_string_able_3>& value)
-{
-	if (str == "ENUM_CLASS_VALUE") {
-		value = from_string_able_3::ENUM_CLASS_VALUE;
-	} else {
-		value = std::nullopt;
-	}
-}
-
-struct from_string_able_4 {};
-
-struct from_string_able_5 {
-	int a;
-};
-
-void from_string(const std::string_view str, std::optional<from_string_able_5>& value)
-{
-	if (int parsed; std::from_chars(str.data(), str.data() + str.size(), parsed).ec == std::errc{}) {
-		value = from_string_able_5{parsed};
-	} else {
-		value = std::nullopt;
-	}
-}
-
-struct from_string_able_6 {};
-void from_string(const std::string_view, std::optional<from_string_able_6>);
-
-struct from_string_able_7 {};
-void from_string(std::string_view, std::optional<from_string_able_7>&);
-
-struct from_string_able_8 {};
-void from_string(const std::string_view&, std::optional<from_string_able_8>&);
-
-struct from_string_able_9 {};
-void from_string(std::string_view&, std::optional<from_string_able_9>&);
-
-struct from_string_able_10 {};
-void from_string(std::string, std::optional<from_string_able_10>&);
-
-struct from_string_able_11 {};
-void from_string(const std::string, std::optional<from_string_able_11>&);
-
-struct from_string_able_12 {};
-void from_string(std::string&, std::optional<from_string_able_12>&);
-
-struct from_string_able_13 {};
-void from_string(const std::string&, std::optional<from_string_able_13>&);
-
-struct from_string_able_14 {};
-void from_string(const std::string_view, const std::optional<from_string_able_14>&);
-
-struct from_string_able_15 {};
-void from_string(const std::string_view, std::optional<from_string_able_15>&&);
-
-struct from_string_able_16 {};
-std::string from_string(const std::string_view, std::optional<from_string_able_16>&);
-
-static_assert(has_from_string_fn_v<from_string_able_0> == false);
-static_assert(has_from_string_fn_v<from_string_able_1> == false);
-static_assert(has_from_string_fn_v<from_string_able_2> == true);
-static_assert(has_from_string_fn_v<from_string_able_3> == true);
-static_assert(has_from_string_fn_v<from_string_able_4> == false);
-static_assert(has_from_string_fn_v<from_string_able_5> == true);
-static_assert(has_from_string_fn_v<from_string_able_6> == false);
-static_assert(has_from_string_fn_v<from_string_able_7> == true);
-static_assert(has_from_string_fn_v<from_string_able_8> == true);
-static_assert(has_from_string_fn_v<from_string_able_9> == false);
-static_assert(has_from_string_fn_v<from_string_able_10> == true);
-static_assert(has_from_string_fn_v<from_string_able_11> == true);
-static_assert(has_from_string_fn_v<from_string_able_12> == false);
-static_assert(has_from_string_fn_v<from_string_able_13> == true);
-static_assert(has_from_string_fn_v<from_string_able_14> == false);
-static_assert(has_from_string_fn_v<from_string_able_15> == false);
-static_assert(has_from_string_fn_v<from_string_able_16> == true);
-static_assert(has_from_string_fn_v<int> == false);
-
-TEST_CASE("Parsing using free standing from_string function", "[libenvpp_parser]")
-{
-	SECTION("enum")
-	{
-		auto enum_value = std::optional<from_string_able_2>{};
-
-		from_string("FROM_STRING_ENUM_VALUE", enum_value);
-		REQUIRE(enum_value.has_value());
-		CHECK(*enum_value == from_string_able_2::FROM_STRING_ENUM_VALUE);
-
-		from_string("asdf", enum_value);
-		CHECK_FALSE(enum_value.has_value());
-	}
-
-	SECTION("enum class")
-	{
-		auto enum_class_value = std::optional<from_string_able_3>{};
-
-		from_string("ENUM_CLASS_VALUE", enum_class_value);
-		REQUIRE(enum_class_value.has_value());
-		CHECK(*enum_class_value == from_string_able_3::ENUM_CLASS_VALUE);
-
-		from_string("asdf", enum_class_value);
-		CHECK_FALSE(enum_class_value.has_value());
-	}
-
-	SECTION("struct")
-	{
-		auto struct_value = std::optional<from_string_able_5>{};
-
-		from_string("42", struct_value);
-		REQUIRE(struct_value.has_value());
-		CHECK(struct_value->a == 42);
-
-		from_string("qwer", struct_value);
-		CHECK_FALSE(struct_value.has_value());
-	}
-}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -295,11 +155,10 @@ TEST_CASE("Parsing using stream operator>>", "[libenvpp_parser]")
 template <typename T>
 void test_parser(const std::string_view str, const T expected)
 {
-	auto value = std::optional<T>{};
-	const auto res = construct_from_string(str, value);
-	CHECK(res.empty());
-	REQUIRE(value.has_value());
-	CHECK(*value == expected);
+	CHECK_NOTHROW([&] {
+		const auto parsed = construct_from_string<T>(str);
+		CHECK(parsed == expected);
+	}());
 }
 
 TEST_CASE("Parsing well-formed input of primitive type", "[libenvpp_parser]")
@@ -373,16 +232,6 @@ class string_constructible {
 	const std::string m_str;
 };
 
-struct from_string_able {
-	bool operator==(const from_string_able& other) const { return m_str == other.m_str; }
-
-	std::string m_str;
-};
-void from_string(const std::string_view str, std::optional<from_string_able>& value)
-{
-	value = from_string_able{std::string(str)};
-}
-
 struct stream_constructible {
 	bool operator==(const stream_constructible& other) const { return m_str == other.m_str; }
 
@@ -397,18 +246,14 @@ std::istringstream& operator>>(std::istringstream& stream, stream_constructible&
 TEST_CASE("Parsing well-formed input of user-defined type", "[libenvpp_parser]")
 {
 	test_parser<string_constructible>("foo", string_constructible{"foo"});
-	test_parser<from_string_able>("bar", from_string_able{"bar"});
 	test_parser<stream_constructible>("baz", stream_constructible{"baz"});
 }
 
 template <typename T>
 void test_parser_error(const std::string_view str)
 {
-	auto value = std::optional<T>{};
-	const auto err = construct_from_string(str, value);
-	CHECK_FALSE(value.has_value());
-	CHECK_FALSE(err.empty());
-	CHECK_THAT(err, ContainsSubstring(std::string(str)));
+	CHECK_THROWS_AS(construct_from_string<T>(str), parser_error);
+	CHECK_THROWS_WITH(construct_from_string<T>(str), ContainsSubstring(std::string(str)));
 }
 
 TEST_CASE("Parsing ill-formed input of primitive type", "[libenvpp_parser]")
@@ -452,27 +297,6 @@ struct not_string_constructible_1 {
 	not_string_constructible_1(const std::string_view) { throw std::runtime_error{"Unconstructible"}; }
 };
 
-struct not_from_string_able_0 {};
-void from_string(const std::string_view, std::optional<not_from_string_able_0>&) {}
-
-struct not_from_string_able_1 {};
-void from_string(const std::string_view, std::optional<not_from_string_able_1>&)
-{
-	throw 0;
-}
-
-struct not_from_string_able_2 {};
-void from_string(const std::string_view, std::optional<not_from_string_able_2>&)
-{
-	throw std::runtime_error{"Unconstructible"};
-}
-
-struct not_from_string_able_3 {};
-std::string from_string(const std::string_view str, std::optional<not_from_string_able_3>&)
-{
-	return fmt::format("Not constructible from '{}'", str);
-}
-
 struct not_stream_constructible_0 {};
 std::istringstream& operator>>(std::istringstream& stream, not_stream_constructible_0&)
 {
@@ -496,11 +320,6 @@ TEST_CASE("Parsing ill-formed input of user-defined type", "[libenvpp_parser]")
 {
 	test_parser_error<not_string_constructible_0>("don't care");
 	test_parser_error<not_string_constructible_1>("don't care");
-
-	test_parser_error<not_from_string_able_0>("don't care");
-	test_parser_error<not_from_string_able_1>("don't care");
-	test_parser_error<not_from_string_able_2>("don't care");
-	test_parser_error<not_from_string_able_3>("don't care");
 
 	test_parser_error<not_stream_constructible_0>("don't care");
 	test_parser_error<not_stream_constructible_1>("don't care");

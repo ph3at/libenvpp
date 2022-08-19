@@ -20,29 +20,13 @@
 
 #include <fmt/core.h>
 
+#include <libenvpp_errors.hpp>
 #include <libenvpp_parser.hpp>
 #include <libenvpp_util.hpp>
 
 namespace env {
 
 class prefix;
-
-class duplicate_option : public std::invalid_argument {
-  public:
-	duplicate_option() : std::invalid_argument("Same option specified more than once") {}
-};
-
-class parser_error : public std::runtime_error {
-  public:
-	parser_error() = delete;
-	parser_error(const std::string_view message) : std::runtime_error(std::string(message)) {}
-};
-
-class unrecognized_option : public std::runtime_error {
-  public:
-	unrecognized_option() = delete;
-	unrecognized_option(const std::string_view message) : std::runtime_error(std::string(message)) {}
-};
 
 namespace detail {
 
@@ -152,18 +136,6 @@ class validated_prefix {
 	friend prefix;
 };
 
-template <typename T>
-T make_from_string(const std::string_view str)
-{
-	auto value = T{};
-	auto stream = std::istringstream(std::string(str));
-	stream >> value;
-	if (stream.fail()) {
-		throw std::runtime_error{"Failed to create object from string"};
-	}
-	return value;
-}
-
 } // namespace detail
 
 template <typename T>
@@ -180,7 +152,7 @@ class default_parser {
 
 	T operator()(const std::string_view str) const
 	{
-		T value = detail::make_from_string<T>(str);
+		T value = detail::construct_from_string<T>(str);
 		m_validator(value);
 		return value;
 	}
