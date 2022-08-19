@@ -311,146 +311,67 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 	}
 
 	struct specifiers {
+		void mem_fn() {}
 		void const_mem_fn() const {}
 		void volatile_mem_fn() volatile {}
-		void noexcept_mem_fn() noexcept {}
 		void const_volatile_mem_fn() const volatile {}
-		void const_noexcept_mem_fn() const noexcept {}
-		void const_volatile_noexcept_mem_fn() const volatile noexcept {}
 		void ref_mem_fn() & {}
-		void ref_noexcept_mem_fn() & noexcept {}
 		void const_ref_mem_fn() const& {}
-		void const_ref_noexcept_mem_fn() const& noexcept {}
 		void volatile_ref_mem_fn() volatile& {}
-		void volatile_ref_noexcept_mem_fn() volatile& noexcept {}
 		void const_volatile_ref_mem_fn() const volatile& {}
-		void const_volatile_ref_noexcept_mem_fn() const volatile& noexcept {}
 		void rval_mem_fn() && {}
-		void rval_noexcept_mem_fn() && noexcept {}
 		void const_rval_mem_fn() const&& {}
-		void const_rval_noexcept_mem_fn() const&& noexcept {}
 		void volatile_rval_mem_fn() volatile&& {}
-		void volatile_rval_noexcept_mem_fn() volatile&& noexcept {}
 		void const_volatile_rval_mem_fn() const volatile&& {}
+		void noexcept_mem_fn() noexcept {}
+		void const_noexcept_mem_fn() const noexcept {}
+		void volatile_noexcept_mem_fn() volatile noexcept {}
+		void const_volatile_noexcept_mem_fn() const volatile noexcept {}
+		void ref_noexcept_mem_fn() & noexcept {}
+		void const_ref_noexcept_mem_fn() const& noexcept {}
+		void volatile_ref_noexcept_mem_fn() volatile& noexcept {}
+		void const_volatile_ref_noexcept_mem_fn() const volatile& noexcept {}
+		void rval_noexcept_mem_fn() && noexcept {}
+		void const_rval_noexcept_mem_fn() const&& noexcept {}
+		void volatile_rval_noexcept_mem_fn() volatile&& noexcept {}
 		void const_volatile_rval_noexcept_mem_fn() const volatile&& noexcept {}
 	};
 
 	SECTION("Member function specifiers")
 	{
-		using const_mem_fn_traits = function_traits<decltype(&specifiers::const_mem_fn)>;
-		static_assert(std::is_same_v<const_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_mem_fn_traits::arity == 0);
+		constexpr auto all_mem_fn_specifier = std::tuple{&specifiers::mem_fn,
+		                                                 &specifiers::const_mem_fn,
+		                                                 &specifiers::volatile_mem_fn,
+		                                                 &specifiers::const_volatile_mem_fn,
+		                                                 &specifiers::ref_mem_fn,
+		                                                 &specifiers::const_ref_mem_fn,
+		                                                 &specifiers::volatile_ref_mem_fn,
+		                                                 &specifiers::const_volatile_ref_mem_fn,
+		                                                 &specifiers::rval_mem_fn,
+		                                                 &specifiers::const_rval_mem_fn,
+		                                                 &specifiers::volatile_rval_mem_fn,
+		                                                 &specifiers::const_volatile_rval_mem_fn,
+		                                                 &specifiers::noexcept_mem_fn,
+		                                                 &specifiers::const_noexcept_mem_fn,
+		                                                 &specifiers::volatile_noexcept_mem_fn,
+		                                                 &specifiers::const_volatile_noexcept_mem_fn,
+		                                                 &specifiers::ref_noexcept_mem_fn,
+		                                                 &specifiers::const_ref_noexcept_mem_fn,
+		                                                 &specifiers::volatile_ref_noexcept_mem_fn,
+		                                                 &specifiers::const_volatile_ref_noexcept_mem_fn,
+		                                                 &specifiers::rval_noexcept_mem_fn,
+		                                                 &specifiers::const_rval_noexcept_mem_fn,
+		                                                 &specifiers::volatile_rval_noexcept_mem_fn,
+		                                                 &specifiers::const_volatile_rval_noexcept_mem_fn};
 
-		using volatile_mem_fn_traits = function_traits<decltype(&specifiers::volatile_mem_fn)>;
-		static_assert(std::is_same_v<volatile_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<volatile_mem_fn_traits::class_type, specifiers>);
-		static_assert(volatile_mem_fn_traits::arity == 0);
-
-		using noexcept_mem_fn_traits = function_traits<decltype(&specifiers::noexcept_mem_fn)>;
-		static_assert(std::is_same_v<noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(noexcept_mem_fn_traits::arity == 0);
-
-		using const_volatile_mem_fn_traits = function_traits<decltype(&specifiers::const_volatile_mem_fn)>;
-		static_assert(std::is_same_v<const_volatile_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_volatile_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_volatile_mem_fn_traits::arity == 0);
-
-		using const_noexcept_mem_fn_traits = function_traits<decltype(&specifiers::const_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<const_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_noexcept_mem_fn_traits::arity == 0);
-
-		using const_volatile_noexcept_mem_fn_traits =
-		    function_traits<decltype(&specifiers::const_volatile_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<const_volatile_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_volatile_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_volatile_noexcept_mem_fn_traits::arity == 0);
-
-		using ref_mem_fn_traits = function_traits<decltype(&specifiers::ref_mem_fn)>;
-		static_assert(std::is_same_v<ref_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<ref_mem_fn_traits::class_type, specifiers>);
-		static_assert(ref_mem_fn_traits::arity == 0);
-
-		using ref_noexcept_mem_fn_traits = function_traits<decltype(&specifiers::ref_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<ref_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<ref_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(ref_noexcept_mem_fn_traits::arity == 0);
-
-		using const_ref_mem_fn_traits = function_traits<decltype(&specifiers::const_ref_mem_fn)>;
-		static_assert(std::is_same_v<const_ref_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_ref_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_ref_mem_fn_traits::arity == 0);
-
-		using const_ref_noexcept_mem_fn_traits = function_traits<decltype(&specifiers::const_ref_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<const_ref_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_ref_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_ref_noexcept_mem_fn_traits::arity == 0);
-
-		using volatile_ref_mem_fn_traits = function_traits<decltype(&specifiers::volatile_ref_mem_fn)>;
-		static_assert(std::is_same_v<volatile_ref_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<volatile_ref_mem_fn_traits::class_type, specifiers>);
-		static_assert(volatile_ref_mem_fn_traits::arity == 0);
-
-		using volatile_ref_noexcept_mem_fn_traits =
-		    function_traits<decltype(&specifiers::volatile_ref_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<volatile_ref_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<volatile_ref_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(volatile_ref_noexcept_mem_fn_traits::arity == 0);
-
-		using const_volatile_ref_mem_fn_traits = function_traits<decltype(&specifiers::const_volatile_ref_mem_fn)>;
-		static_assert(std::is_same_v<const_volatile_ref_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_volatile_ref_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_volatile_ref_mem_fn_traits::arity == 0);
-
-		using const_volatile_ref_noexcept_mem_fn_traits =
-		    function_traits<decltype(&specifiers::const_volatile_ref_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<const_volatile_ref_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_volatile_ref_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_volatile_ref_noexcept_mem_fn_traits::arity == 0);
-
-		using rval_mem_fn_traits = function_traits<decltype(&specifiers::rval_mem_fn)>;
-		static_assert(std::is_same_v<rval_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<rval_mem_fn_traits::class_type, specifiers>);
-		static_assert(rval_mem_fn_traits::arity == 0);
-
-		using rval_noexcept_mem_fn_traits = function_traits<decltype(&specifiers::rval_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<rval_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<rval_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(rval_noexcept_mem_fn_traits::arity == 0);
-
-		using const_rval_mem_fn_traits = function_traits<decltype(&specifiers::const_rval_mem_fn)>;
-		static_assert(std::is_same_v<const_rval_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_rval_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_rval_mem_fn_traits::arity == 0);
-
-		using const_rval_noexcept_mem_fn_traits = function_traits<decltype(&specifiers::const_rval_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<const_rval_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_rval_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_rval_noexcept_mem_fn_traits::arity == 0);
-
-		using volatile_rval_mem_fn_traits = function_traits<decltype(&specifiers::volatile_rval_mem_fn)>;
-		static_assert(std::is_same_v<volatile_rval_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<volatile_rval_mem_fn_traits::class_type, specifiers>);
-		static_assert(volatile_rval_mem_fn_traits::arity == 0);
-
-		using volatile_rval_noexcept_mem_fn_traits =
-		    function_traits<decltype(&specifiers::volatile_rval_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<volatile_rval_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<volatile_rval_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(volatile_rval_noexcept_mem_fn_traits::arity == 0);
-
-		using const_volatile_rval_mem_fn_traits = function_traits<decltype(&specifiers::const_volatile_rval_mem_fn)>;
-		static_assert(std::is_same_v<const_volatile_rval_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_volatile_rval_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_volatile_rval_mem_fn_traits::arity == 0);
-
-		using const_volatile_rval_noexcept_mem_fn_traits =
-		    function_traits<decltype(&specifiers::const_volatile_rval_noexcept_mem_fn)>;
-		static_assert(std::is_same_v<const_volatile_rval_noexcept_mem_fn_traits::result_type, void>);
-		static_assert(std::is_same_v<const_volatile_rval_noexcept_mem_fn_traits::class_type, specifiers>);
-		static_assert(const_volatile_rval_noexcept_mem_fn_traits::arity == 0);
+		for_constexpr(
+		    [](auto&& fn) {
+			    using fn_traits = function_traits<decltype(fn)>;
+			    static_assert(std::is_same_v<typename fn_traits::result_type, void>);
+			    static_assert(std::is_same_v<typename fn_traits::class_type, specifiers>);
+			    static_assert(fn_traits::arity == 0);
+		    },
+		    all_mem_fn_specifier);
 	}
 
 	struct base {
