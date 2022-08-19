@@ -40,8 +40,8 @@ class set_scoped_environment_variable {
 	}
 
   private:
-	const std::string m_name;
-	const std::optional<std::string> m_old_value;
+	std::string m_name;
+	std::optional<std::string> m_old_value;
 };
 
 } // namespace env::detail

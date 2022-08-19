@@ -93,7 +93,7 @@ class variable_data {
 	    : m_name(name), m_parser_and_validator(parser_and_validator)
 	{}
 
-	const std::string m_name;
+	std::string m_name;
 	parse_and_validate_fn m_parser_and_validator;
 	std::any m_value;
 
