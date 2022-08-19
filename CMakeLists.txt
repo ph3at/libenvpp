@@ -32,7 +32,7 @@ function(libenvpp_set_compiler_parameters TARGET)
 		CXX_EXTENSIONS OFF
 	)
 	target_compile_options(${TARGET} PRIVATE
-		$<$<CXX_COMPILER_ID:MSVC>:/D_CRT_SECURE_NO_WARNINGS /MP /W4 /permissive- /bigobj /Zi /utf-8 /D_UNICODE>
+		$<$<CXX_COMPILER_ID:MSVC>:/D_CRT_SECURE_NO_WARNINGS /MP /W4 /permissive- /bigobj /Zi /utf-8>
 		$<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra -pedantic -g>
 		$<$<CXX_COMPILER_ID:GNU>:-fdiagnostics-color>
 		$<$<CXX_COMPILER_ID:Clang,AppleClang>:-fcolor-diagnostics>
