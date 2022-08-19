@@ -92,15 +92,17 @@ template <typename C, typename R, typename... A> struct remove_mem_fn_specifier<
 template <typename C, typename R, typename... A> struct remove_mem_fn_specifier<R(C::*)(A...) const&& noexcept>          { using type = R(C::*)(A...); };
 template <typename C, typename R, typename... A> struct remove_mem_fn_specifier<R(C::*)(A...) volatile&& noexcept>       { using type = R(C::*)(A...); };
 template <typename C, typename R, typename... A> struct remove_mem_fn_specifier<R(C::*)(A...) const volatile&& noexcept> { using type = R(C::*)(A...); };
-// clang-format on
+template <typename T> using remove_mem_fn_specifier_t = typename remove_mem_fn_specifier<T>::type;
 
-template <typename T>
-using remove_mem_fn_specifier_t = typename remove_mem_fn_specifier<T>::type;
+template <typename T>                struct remove_fn_specifier                   { using type = T; };
+template <typename R, typename... A> struct remove_fn_specifier<R(A...) noexcept> { using type = R(A...); };
+template <typename T> using remove_fn_specifier_t = typename remove_fn_specifier<T>::type;
+// clang-format on
 
 template <typename Fn>
 struct function_traits
-    : function_traits<remove_mem_fn_specifier_t<
-          std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<get_call_operator_t<Fn>>>>>> {};
+    : function_traits<remove_mem_fn_specifier_t<remove_fn_specifier_t<
+          std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<get_call_operator_t<Fn>>>>>>> {};
 
 template <typename C, typename R, typename... A>
 struct function_traits<R (C::*)(A...)> : function_traits<R(A...)> {

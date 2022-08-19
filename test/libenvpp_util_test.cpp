@@ -219,6 +219,7 @@ static int int_to_int_fn(int)
 {
 	return {};
 }
+[[maybe_unused]] static void noexcept_fn() noexcept {}
 
 TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 {
@@ -243,6 +244,10 @@ TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 		static_assert(int_to_int_fn_traits::arity == 1);
 		static_assert(std::is_same_v<int_to_int_fn_traits::arg0_type, int>);
 		static_assert(std::is_same_v<int_to_int_fn_traits::arg_type<0>, int>);
+
+		using noexcept_fn_traits = function_traits<decltype(noexcept_fn)>;
+		static_assert(std::is_same_v<noexcept_fn_traits::result_type, void>);
+		static_assert(noexcept_fn_traits::arity == 0);
 	}
 
 	SECTION("Function pointer type")
