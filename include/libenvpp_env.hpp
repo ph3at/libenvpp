@@ -7,9 +7,9 @@
 
 namespace env::detail {
 
-std::unordered_map<std::string, std::string> get_environment();
+[[nodiscard]] std::unordered_map<std::string, std::string> get_environment();
 
-std::optional<std::string> get_environment_variable(const std::string_view name);
+[[nodiscard]] std::optional<std::string> get_environment_variable(const std::string_view name);
 
 void set_environment_variable(const std::string_view name, const std::string_view value);
 

@@ -8,14 +8,14 @@
 
 namespace levenshtein {
 
-bool is_distance_less_than(std::string_view lhs, std::string_view rhs, const int cutoff_distance)
+[[nodiscard]] bool is_distance_less_than(std::string_view lhs, std::string_view rhs, const int cutoff_distance)
 {
 	return distance(lhs, rhs, cutoff_distance) < cutoff_distance;
 }
 
 // Based on the Apache Commons implementation.
-int distance(std::string_view lhs, std::string_view rhs,
-             const int cutoff_distance /*= std::numeric_limits<int>::max()*/)
+[[nodiscard]] int distance(std::string_view lhs, std::string_view rhs,
+                           const int cutoff_distance /*= std::numeric_limits<int>::max()*/)
 {
 	LIBENVPP_CHECK(cutoff_distance >= 0);
 

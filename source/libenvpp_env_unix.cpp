@@ -10,7 +10,7 @@ extern "C" const char* const* const environ;
 
 namespace env::detail {
 
-std::unordered_map<std::string, std::string> get_environment()
+[[nodiscard]] std::unordered_map<std::string, std::string> get_environment()
 {
 	auto env_map = std::unordered_map<std::string, std::string>{};
 
@@ -34,7 +34,7 @@ std::unordered_map<std::string, std::string> get_environment()
 	return env_map;
 }
 
-std::optional<std::string> get_environment_variable(const std::string_view name)
+[[nodiscard]] std::optional<std::string> get_environment_variable(const std::string_view name)
 {
 	const auto env_var_value = getenv(std::string(name).c_str());
 	if (env_var_value == nullptr) {

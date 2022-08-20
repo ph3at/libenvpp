@@ -99,7 +99,7 @@ class validated_prefix {
 	validated_prefix& operator=(validated_prefix&&) = default;
 
 	template <typename T, detail::variable_type VariableType, bool IsRequired>
-	auto get(const detail::variable_id<T, VariableType, IsRequired>& var_id)
+	[[nodiscard]] auto get(const detail::variable_id<T, VariableType, IsRequired>& var_id)
 	{
 		if constexpr (IsRequired) {
 			return std::any_cast<T>(m_prefix.m_registered_vars[var_id.m_idx].m_value);
@@ -140,7 +140,7 @@ class validated_prefix {
 
 template <typename T>
 struct default_validator {
-	void operator()(const T&) const {}
+	void operator()(const T&) const noexcept {}
 };
 
 template <typename T>
@@ -150,7 +150,7 @@ class default_parser {
 	default_parser(Validator validator) : m_validator(std::move(validator))
 	{}
 
-	T operator()(const std::string_view str) const
+	[[nodiscard]] T operator()(const std::string_view str) const
 	{
 		T value = detail::construct_from_string<T>(str);
 		m_validator(value);
@@ -163,7 +163,10 @@ class default_parser {
 
 template <typename T>
 struct default_parser_and_validator {
-	T operator()(const std::string_view str) const { return default_parser<T>{default_validator<T>{}}(str); }
+	[[nodiscard]] T operator()(const std::string_view str) const
+	{
+		return default_parser<T>{default_validator<T>{}}(str);
+	}
 };
 
 template <typename Validator>

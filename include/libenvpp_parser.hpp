@@ -55,7 +55,7 @@ class parser_error : public std::runtime_error {
 };
 
 template <typename T>
-T construct_from_string(const std::string_view str)
+[[nodiscard]] T construct_from_string(const std::string_view str)
 {
 	if constexpr (is_string_constructible_v<T>) {
 		try {

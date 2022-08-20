@@ -34,7 +34,7 @@ static inline std::wstring convert_string(const std::string& str)
 	return dst;
 }
 
-std::unordered_map<std::string, std::string> get_environment()
+[[nodiscard]] std::unordered_map<std::string, std::string> get_environment()
 {
 	auto env_map = std::unordered_map<std::string, std::string>{};
 
@@ -64,7 +64,7 @@ std::unordered_map<std::string, std::string> get_environment()
 	return env_map;
 }
 
-std::optional<std::string> get_environment_variable(const std::string_view name)
+[[nodiscard]] std::optional<std::string> get_environment_variable(const std::string_view name)
 {
 	const auto var_name = convert_string(std::string(name));
 	const auto buffer_size = GetEnvironmentVariableW(var_name.c_str(), nullptr, 0);
