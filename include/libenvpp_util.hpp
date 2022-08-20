@@ -51,7 +51,7 @@ constexpr decltype(auto) for_constexpr(Fn&& func, Tuple&& tuple)
 
 //////////////////////////////////////////////////////////////////////////
 // Function traits for free standing functions, function pointers,
-// member functions, and lambdas.
+// member functions, functors, and lambdas.
 
 template <typename T, typename = void>
 struct get_call_operator {
