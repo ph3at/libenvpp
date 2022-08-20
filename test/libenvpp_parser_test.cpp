@@ -176,65 +176,88 @@ void test_parser(const std::string_view str, const T expected)
 	}());
 }
 
-TEST_CASE("Parsing well-formed input of primitive type", "[libenvpp_parser]")
+TEST_CASE("Parsing well-formed input of built-in type", "[libenvpp_parser]")
 {
-	test_parser<bool>("0", false);
-	test_parser<bool>("1", true);
+	SECTION("Primitive types")
+	{
+		test_parser<bool>("0", false);
+		test_parser<bool>("1", true);
 
-	test_parser<char>("0", '0');
-	test_parser<char>("a", 'a');
-	test_parser<char>("A", 'A');
+		test_parser<char>("0", '0');
+		test_parser<char>("a", 'a');
+		test_parser<char>("A", 'A');
 
-	test_parser<short>("-12345", -12345);
-	test_parser<short>("0", 0);
-	test_parser<short>("12345", 12345);
-	test_parser<unsigned short>("0", 0);
-	test_parser<unsigned short>("65000", 65000);
+		test_parser<short>("-12345", -12345);
+		test_parser<short>("0", 0);
+		test_parser<short>("12345", 12345);
+		test_parser<unsigned short>("0", 0);
+		test_parser<unsigned short>("65000", 65000);
 
-	test_parser<int>("-123456789", -123456789);
-	test_parser<int>("0", 0);
-	test_parser<int>("123456789", 123456789);
-	test_parser<unsigned int>("1234567890", 1234567890);
-	test_parser<unsigned int>("0", 0);
+		test_parser<int>("-123456789", -123456789);
+		test_parser<int>("0", 0);
+		test_parser<int>("123456789", 123456789);
+		test_parser<unsigned int>("1234567890", 1234567890);
+		test_parser<unsigned int>("0", 0);
 
-	test_parser<long>("-1234567890", -1234567890);
-	test_parser<long>("0", 0);
-	test_parser<long>("1234567890", 1234567890);
-	test_parser<unsigned long>("0", 0);
-	test_parser<unsigned long>("3456789012", 3456789012);
+		test_parser<long>("-1234567890", -1234567890);
+		test_parser<long>("0", 0);
+		test_parser<long>("1234567890", 1234567890);
+		test_parser<unsigned long>("0", 0);
+		test_parser<unsigned long>("3456789012", 3456789012);
 
-	test_parser<long long>("-123456789012345678", -123456789012345678);
-	test_parser<long long>("0", 0);
-	test_parser<long long>("123456789012345678", 123456789012345678);
-	test_parser<unsigned long long>("0", 0);
-	test_parser<unsigned long long>("1234567890123456789", 1234567890123456789);
+		test_parser<long long>("-123456789012345678", -123456789012345678);
+		test_parser<long long>("0", 0);
+		test_parser<long long>("123456789012345678", 123456789012345678);
+		test_parser<unsigned long long>("0", 0);
+		test_parser<unsigned long long>("1234567890123456789", 1234567890123456789);
 
-	test_parser<float>("-1", -1.f);
-	test_parser<float>("0", 0.f);
-	test_parser<float>("1", 1.f);
-	test_parser<float>("3.1415", 3.1415f);
-	test_parser<float>("0.1", 0.1f);
-	test_parser<float>(".2", .2f);
-	test_parser<float>("0.123", 0.123f);
-	test_parser<float>("0.33333", 0.33333f);
-	test_parser<float>("123456789", 123456789.f);
-	test_parser<float>("-123456789", -123456789.f);
-	test_parser<float>("123456789.1", 123456789.1f);
+		test_parser<float>("-1", -1.f);
+		test_parser<float>("0", 0.f);
+		test_parser<float>("1", 1.f);
+		test_parser<float>("3.1415", 3.1415f);
+		test_parser<float>("0.1", 0.1f);
+		test_parser<float>(".2", .2f);
+		test_parser<float>("0.123", 0.123f);
+		test_parser<float>("0.33333", 0.33333f);
+		test_parser<float>("123456789", 123456789.f);
+		test_parser<float>("-123456789", -123456789.f);
+		test_parser<float>("123456789.1", 123456789.1f);
 
-	test_parser<double>("-1", -1.0);
-	test_parser<double>("0", 0);
-	test_parser<double>("1", 1.0);
-	test_parser<double>("3.1415926535", 3.1415926535);
-	test_parser<double>("1234567890123456789", 1234567890123456789.0);
-	test_parser<double>("-1234567890123456789", -1234567890123456789.0);
-	test_parser<double>("0.1234567890123456789", 0.1234567890123456789);
-	test_parser<double>("-0.1234567890123456789", -0.1234567890123456789);
-	test_parser<double>("1234567890.0123456789", 1234567890.0123456789);
-	test_parser<double>("-1234567890.0123456789", -1234567890.0123456789);
+		test_parser<double>("-1", -1.0);
+		test_parser<double>("0", 0);
+		test_parser<double>("1", 1.0);
+		test_parser<double>("3.1415926535", 3.1415926535);
+		test_parser<double>("1234567890123456789", 1234567890123456789.0);
+		test_parser<double>("-1234567890123456789", -1234567890123456789.0);
+		test_parser<double>("0.1234567890123456789", 0.1234567890123456789);
+		test_parser<double>("-0.1234567890123456789", -0.1234567890123456789);
+		test_parser<double>("1234567890.0123456789", 1234567890.0123456789);
+		test_parser<double>("-1234567890.0123456789", -1234567890.0123456789);
 
-	test_parser<std::string>("", "");
-	test_parser<std::string>("foo", "foo");
-	test_parser<std::string>("BAR", "BAR");
+		test_parser<std::string>("", "");
+	}
+
+	SECTION("Class types"){}
+	{
+		test_parser<std::string>("foo", "foo");
+		test_parser<std::string>("BAR", "BAR");
+	}
+
+	SECTION("Leading and trailing whitespaces")
+	{
+		test_parser<bool>(" 1", true);
+		test_parser<char>("a ", 'a');
+		test_parser<short>(" -12345 ", -12345);
+		test_parser<unsigned short>("\t65000", 65000);
+		test_parser<int>("-123456789\t", -123456789);
+		test_parser<unsigned int>("\t1234567890\t", 1234567890);
+		test_parser<long>("\r-1234567890\n", -1234567890);
+		test_parser<unsigned long>("\n3456789012\r", 3456789012);
+		test_parser<long long>("\r\n-123456789012345678\r\n", -123456789012345678);
+		test_parser<unsigned long long>(" \r \t \n 1234567890123456789 \r \t \n ", 1234567890123456789);
+		test_parser<float>(" \t\r\n -.1234", -.1234f);
+		test_parser<double>(" -.1234567890123456789 \t\r\n ", -.1234567890123456789);
+	}
 }
 
 class string_constructible {

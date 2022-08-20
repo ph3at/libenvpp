@@ -72,6 +72,9 @@ T construct_from_string(const std::string_view str)
 		T parsed;
 		try {
 			stream >> parsed;
+			if (!stream.eof()) {
+				stream >> std::ws;
+			}
 		} catch (const parser_error&) {
 			throw;
 		} catch (const std::exception& e) {
@@ -90,6 +93,9 @@ T construct_from_string(const std::string_view str)
 			auto signed_parsed = std::int64_t{};
 			auto signed_stream = std::istringstream(std::string(str));
 			signed_stream >> signed_parsed;
+			if (!signed_stream.eof()) {
+				signed_stream >> std::ws;
+			}
 			if (signed_stream.fail() || static_cast<std::size_t>(signed_stream.tellg()) < str.size()) {
 				throw parser_error{
 				    fmt::format("Failed to validate whether '{}' was correctly parsed as '{}'", str, parsed)};
