@@ -38,6 +38,16 @@ struct string_constructible_5 {
 	explicit string_constructible_5(std::string_view) {}
 };
 
+class string_constructible_6 {
+  public:
+	string_constructible_6(const std::string_view str) : m_str(std::string(str)) {}
+
+	inline bool operator==(const string_constructible_6& other) const { return m_str == other.m_str; }
+
+  private:
+	std::string m_str;
+};
+
 static_assert(is_string_constructible_v<std::string> == true);
 static_assert(is_string_constructible_v<std::string_view> == true);
 static_assert(is_string_constructible_v<string_constructible_0> == false);
@@ -62,39 +72,60 @@ static_assert(is_string_constructible_v<float> == false);
 enum stream_constructible_0 {};
 enum class stream_constructible_1 {};
 
-enum stream_constructible_2 { STREAM_ENUM_VALUE };
-enum class stream_constructible_3 { ENUM_CLASS_VALUE };
+enum stream_constructible_2 { STREAM_ENUM_VALUE_0, STREAM_ENUM_VALUE_1 };
+enum class stream_constructible_3 { ENUM_CLASS_VALUE_0, ENUM_CLASS_VALUE_1 };
 
-std::istringstream& operator>>(std::istringstream& stream, stream_constructible_2& value)
+static std::istringstream& operator>>(std::istringstream& stream, stream_constructible_2& value)
 {
-	if (stream.str() == "STREAM_ENUM_VALUE") {
-		value = stream_constructible_2::STREAM_ENUM_VALUE;
-	} else {
-		stream.setstate(std::ios_base::failbit);
+	auto sentry = std::istringstream::sentry{stream};
+	if (sentry) {
+		auto str = std::string();
+		stream >> str;
+		if (str == "STREAM_ENUM_VALUE_0") {
+			value = stream_constructible_2::STREAM_ENUM_VALUE_0;
+		} else if (str == "STREAM_ENUM_VALUE_1") {
+			value = stream_constructible_2::STREAM_ENUM_VALUE_1;
+		} else {
+			stream.setstate(std::ios_base::failbit);
+		}
 	}
 	return stream;
 }
 
-std::istringstream& operator>>(std::istringstream& stream, stream_constructible_3& value)
+static std::istringstream& operator>>(std::istringstream& stream, stream_constructible_3& value)
 {
-	if (stream.str() == "ENUM_CLASS_VALUE") {
-		value = stream_constructible_3::ENUM_CLASS_VALUE;
-	} else {
-		stream.setstate(std::ios_base::failbit);
+	auto sentry = std::istringstream::sentry{stream};
+	if (sentry) {
+		auto str = std::string();
+		stream >> str;
+		if (str == "ENUM_CLASS_VALUE_0") {
+			value = stream_constructible_3::ENUM_CLASS_VALUE_0;
+		} else if (str == "ENUM_CLASS_VALUE_1") {
+			value = stream_constructible_3::ENUM_CLASS_VALUE_1;
+		} else {
+			stream.setstate(std::ios_base::failbit);
+		}
 	}
 	return stream;
 }
 
 struct stream_constructible_4 {};
 
-struct stream_constructible_5 {
-	int a;
-};
+class stream_constructible_5 {
+  public:
+	stream_constructible_5() = default;
+	stream_constructible_5(const int num) : m_num(num) {}
+	inline bool operator==(const stream_constructible_5& other) const { return m_num == other.m_num; }
 
-std::istream& operator>>(std::istream& stream, stream_constructible_5& value)
-{
-	return stream >> value.a;
-}
+  private:
+	int m_num;
+
+	friend std::istringstream& operator>>(std::istringstream& stream, stream_constructible_5& value)
+	{
+		stream >> value.m_num;
+		return stream;
+	}
+};
 
 static_assert(is_stringstream_constructible_v<void> == false);
 static_assert(is_stringstream_constructible_v<bool> == true);
@@ -118,53 +149,6 @@ static_assert(is_stringstream_constructible_v<stream_constructible_2> == true);
 static_assert(is_stringstream_constructible_v<stream_constructible_3> == true);
 static_assert(is_stringstream_constructible_v<stream_constructible_4> == false);
 static_assert(is_stringstream_constructible_v<stream_constructible_5> == true);
-
-TEST_CASE("Parsing using stream operator>>", "[libenvpp_parser]")
-{
-	auto stream = std::istringstream{};
-
-	SECTION("enum")
-	{
-		auto enum_value = stream_constructible_2{};
-
-		stream.str("STREAM_ENUM_VALUE");
-		stream >> enum_value;
-		REQUIRE_FALSE(stream.fail());
-		CHECK(enum_value == stream_constructible_2::STREAM_ENUM_VALUE);
-
-		stream.str("asdf");
-		stream >> enum_value;
-		CHECK(stream.fail());
-	}
-
-	SECTION("enum class")
-	{
-		auto enum_class_value = stream_constructible_3{};
-
-		stream.str("ENUM_CLASS_VALUE");
-		stream >> enum_class_value;
-		REQUIRE_FALSE(stream.fail());
-		CHECK(enum_class_value == stream_constructible_3::ENUM_CLASS_VALUE);
-
-		stream.str("asdf");
-		stream >> enum_class_value;
-		CHECK(stream.fail());
-	}
-
-	SECTION("struct")
-	{
-		auto struct_value = stream_constructible_5{};
-
-		stream.str("42");
-		stream >> struct_value;
-		REQUIRE_FALSE(stream.fail());
-		CHECK(struct_value.a == 42);
-
-		stream.str("asdf");
-		stream >> struct_value;
-		CHECK(stream.fail());
-	}
-}
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -263,32 +247,30 @@ TEST_CASE("Parsing well-formed input of built-in type", "[libenvpp_parser]")
 	}
 }
 
-class string_constructible {
-  public:
-	string_constructible(const std::string_view str) : m_str(str) {}
-
-	bool operator==(const string_constructible& other) const { return m_str == other.m_str; }
-
-  private:
-	const std::string m_str;
-};
-
-struct stream_constructible {
-	bool operator==(const stream_constructible& other) const { return m_str == other.m_str; }
-
-	std::string m_str;
-};
-std::istringstream& operator>>(std::istringstream& stream, stream_constructible& value)
-{
-	stream >> value.m_str;
-	return stream;
-}
-
 TEST_CASE("Parsing well-formed input of user-defined type", "[libenvpp_parser]")
 {
-	test_parser<string_constructible>("foo", string_constructible{"foo"});
-	test_parser<stream_constructible>("baz", stream_constructible{"baz"});
+	test_parser<string_constructible_6>("", string_constructible_6{""});
+	test_parser<string_constructible_6>("foo", string_constructible_6{"foo"});
+	test_parser<string_constructible_6>(" foo", string_constructible_6{" foo"});
+	test_parser<string_constructible_6>("\tfoo ", string_constructible_6{"\tfoo "});
+
+	test_parser<stream_constructible_2>("STREAM_ENUM_VALUE_0", stream_constructible_2::STREAM_ENUM_VALUE_0);
+	test_parser<stream_constructible_2>(" STREAM_ENUM_VALUE_1", stream_constructible_2::STREAM_ENUM_VALUE_1);
+	test_parser<stream_constructible_2>("STREAM_ENUM_VALUE_0 ", stream_constructible_2::STREAM_ENUM_VALUE_0);
+	test_parser<stream_constructible_2>("\nSTREAM_ENUM_VALUE_1\t", stream_constructible_2::STREAM_ENUM_VALUE_1);
+
+	test_parser<stream_constructible_3>("ENUM_CLASS_VALUE_0", stream_constructible_3::ENUM_CLASS_VALUE_0);
+	test_parser<stream_constructible_3>(" ENUM_CLASS_VALUE_1", stream_constructible_3::ENUM_CLASS_VALUE_1);
+	test_parser<stream_constructible_3>("ENUM_CLASS_VALUE_0 ", stream_constructible_3::ENUM_CLASS_VALUE_0);
+	test_parser<stream_constructible_3>("\rENUM_CLASS_VALUE_1\n", stream_constructible_3::ENUM_CLASS_VALUE_1);
+
+	test_parser<stream_constructible_5>("42", stream_constructible_5{42});
+	test_parser<stream_constructible_5>(" 42", stream_constructible_5{42});
+	test_parser<stream_constructible_5>("42 ", stream_constructible_5{42});
+	test_parser<stream_constructible_5>(" 42 ", stream_constructible_5{42});
 }
+
+//////////////////////////////////////////////////////////////////////////
 
 template <typename T>
 void test_parser_error(const std::string_view str)
@@ -372,6 +354,21 @@ std::istringstream& operator>>(std::istringstream& stream, not_stream_constructi
 
 TEST_CASE("Parsing ill-formed input of user-defined type", "[libenvpp_parser]")
 {
+	test_parser_error<stream_constructible_2>("");
+	test_parser_error<stream_constructible_2>("asdf");
+	test_parser_error<stream_constructible_2>("stream_enum_value_0");
+	test_parser_error<stream_constructible_2>("STREAM_ENUM_VALUE_2");
+
+	test_parser_error<stream_constructible_3>("");
+	test_parser_error<stream_constructible_3>("asdf");
+	test_parser_error<stream_constructible_3>("enum_class_value_0");
+	test_parser_error<stream_constructible_3>("ENUM_CLASS_VALUE_2");
+
+	test_parser_error<stream_constructible_5>("");
+	test_parser_error<stream_constructible_5>("asdf");
+	test_parser_error<stream_constructible_5>("12345678901");
+	test_parser_error<stream_constructible_5>("-12345678901");
+
 	test_parser_error<not_string_constructible_0>("not_string_constructible_0");
 	test_parser_error<not_string_constructible_1>("not_string_constructible_1");
 	test_parser_error<not_string_constructible_2>("not_string_constructible_2");
