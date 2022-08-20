@@ -153,11 +153,11 @@ static_assert(is_stringstream_constructible_v<stream_constructible_5> == true);
 //////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-void test_parser(const std::string_view str, const T expected)
+static void test_parser(const std::string_view str, const T expected)
 {
 	CHECK_NOTHROW([&] {
 		const auto parsed = construct_from_string<T>(str);
-		CHECK(parsed == expected);
+		CHECK((parsed == expected));
 	}());
 }
 
@@ -273,7 +273,7 @@ TEST_CASE("Parsing well-formed input of user-defined type", "[libenvpp_parser]")
 //////////////////////////////////////////////////////////////////////////
 
 template <typename T>
-void test_parser_error(const std::string_view str)
+static void test_parser_error(const std::string_view str)
 {
 	CHECK_THROWS_AS(construct_from_string<T>(str), parser_error);
 	CHECK_THROWS_WITH(construct_from_string<T>(str), ContainsSubstring(std::string(str)));
