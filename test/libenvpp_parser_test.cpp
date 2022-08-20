@@ -7,6 +7,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
+#include <fmt/core.h>
 
 #include <libenvpp_parser.hpp>
 #include <libenvpp_util.hpp>
@@ -337,6 +338,13 @@ struct not_string_constructible_1 {
 	not_string_constructible_1(const std::string_view) { throw std::runtime_error{"Unconstructible"}; }
 };
 
+struct not_string_constructible_2 {
+	not_string_constructible_2(const std::string_view str)
+	{
+		throw parser_error{fmt::format("Failed to construct '{}'", str)};
+	}
+};
+
 struct not_stream_constructible_0 {};
 std::istringstream& operator>>(std::istringstream& stream, not_stream_constructible_0&)
 {
@@ -356,14 +364,22 @@ std::istringstream& operator>>(std::istringstream&, not_stream_constructible_2&)
 	throw std::runtime_error{"Unconstructible"};
 }
 
+struct not_stream_constructible_3 {};
+std::istringstream& operator>>(std::istringstream& stream, not_stream_constructible_3&)
+{
+	throw parser_error{fmt::format("Failed to construct '{}'", stream.str())};
+}
+
 TEST_CASE("Parsing ill-formed input of user-defined type", "[libenvpp_parser]")
 {
-	test_parser_error<not_string_constructible_0>("don't care");
-	test_parser_error<not_string_constructible_1>("don't care");
+	test_parser_error<not_string_constructible_0>("not_string_constructible_0");
+	test_parser_error<not_string_constructible_1>("not_string_constructible_1");
+	test_parser_error<not_string_constructible_2>("not_string_constructible_2");
 
-	test_parser_error<not_stream_constructible_0>("don't care");
-	test_parser_error<not_stream_constructible_1>("don't care");
-	test_parser_error<not_stream_constructible_2>("don't care");
+	test_parser_error<not_stream_constructible_0>("not_stream_constructible_0");
+	test_parser_error<not_stream_constructible_1>("not_stream_constructible_1");
+	test_parser_error<not_stream_constructible_2>("not_stream_constructible_2");
+	test_parser_error<not_stream_constructible_3>("not_stream_constructible_3");
 }
 
 } // namespace env::detail
