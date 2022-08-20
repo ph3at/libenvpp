@@ -71,7 +71,15 @@ T construct_from_string(const std::string_view str)
 		auto stream = std::istringstream(std::string(str));
 		T parsed;
 		try {
-			stream >> parsed;
+			if constexpr (std::is_same_v<T, bool>) {
+				stream >> std::boolalpha >> parsed;
+				if (stream.fail()) {
+					stream.clear();
+					stream >> std::noboolalpha >> parsed;
+				}
+			} else {
+				stream >> parsed;
+			}
 			if (!stream.eof()) {
 				stream >> std::ws;
 			}
@@ -89,7 +97,7 @@ T construct_from_string(const std::string_view str)
 			throw parser_error{fmt::format("Input '{}' was only parsed partially with remaining data '{}'", str,
 			                               stream.str().substr(stream.tellg()))};
 		}
-		if constexpr (std::is_unsigned_v<T>) {
+		if constexpr (!std::is_same_v<T, bool> && std::is_unsigned_v<T>) {
 			auto signed_parsed = std::int64_t{};
 			auto signed_stream = std::istringstream(std::string(str));
 			signed_stream >> signed_parsed;

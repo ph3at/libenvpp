@@ -182,6 +182,8 @@ TEST_CASE("Parsing well-formed input of built-in type", "[libenvpp_parser]")
 	{
 		test_parser<bool>("0", false);
 		test_parser<bool>("1", true);
+		test_parser<bool>("false", false);
+		test_parser<bool>("true", true);
 
 		test_parser<char>("0", '0');
 		test_parser<char>("a", 'a');
@@ -299,8 +301,8 @@ TEST_CASE("Parsing ill-formed input of primitive type", "[libenvpp_parser]")
 	test_parser_error<bool>("");
 	test_parser_error<bool>(" ");
 	test_parser_error<bool>("a");
-	test_parser_error<bool>("true");
-	test_parser_error<bool>("false");
+	test_parser_error<bool>("True");
+	test_parser_error<bool>("False");
 
 	test_parser_error<short>("");
 	test_parser_error<short>(" ");
