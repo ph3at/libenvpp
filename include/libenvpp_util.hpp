@@ -164,4 +164,16 @@ struct callable_traits<R(A0, A1, A2, A...)> {
 	static constexpr bool is_member_function = false;
 };
 
+//////////////////////////////////////////////////////////////////////////
+// Trait to detect availability of to_string function
+
+template <typename T, typename = void>
+struct has_to_string : std::false_type {};
+
+template <typename T>
+struct has_to_string<T, std::void_t<decltype(to_string(std::declval<T>()))>> : std::true_type {};
+
+template <typename T>
+inline constexpr auto has_to_string_v = has_to_string<T>::value;
+
 } // namespace env::detail::util

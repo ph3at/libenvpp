@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <functional>
+#include <initializer_list>
 #include <limits>
 #include <memory>
 #include <optional>
@@ -30,19 +31,9 @@ class prefix;
 
 namespace detail {
 
-enum class variable_type {
-	variable,
-	range,
-	option,
-};
-
-template <typename T, variable_type VariableType, bool IsRequired>
+template <typename T, bool IsRequired>
 class variable_id {
   public:
-	using value_type = T;
-	static constexpr auto var_type = VariableType;
-	static constexpr auto is_required = IsRequired;
-
 	variable_id() = delete;
 	variable_id(const variable_id&) = delete;
 	variable_id(variable_id&&) = default;
@@ -62,7 +53,7 @@ class variable_id {
 
 class variable_data {
   public:
-	using parse_and_validate_fn = std::function<std::any(const std::string_view)>;
+	using parser_and_validator_fn = std::function<std::any(const std::string_view)>;
 
 	variable_data() = delete;
 
@@ -73,12 +64,12 @@ class variable_data {
 	variable_data& operator=(variable_data&&) = default;
 
   private:
-	variable_data(const std::string_view name, parse_and_validate_fn parser_and_validator)
-	    : m_name(name), m_parser_and_validator(parser_and_validator)
+	variable_data(const std::string_view name, parser_and_validator_fn parser_and_validator)
+	    : m_name(name), m_parser_and_validator(std::move(parser_and_validator))
 	{}
 
 	std::string m_name;
-	parse_and_validate_fn m_parser_and_validator;
+	parser_and_validator_fn m_parser_and_validator;
 	std::any m_value;
 
 	friend prefix;
@@ -98,14 +89,22 @@ class validated_prefix {
 	validated_prefix& operator=(const validated_prefix&) = delete;
 	validated_prefix& operator=(validated_prefix&&) = default;
 
-	template <typename T, detail::variable_type VariableType, bool IsRequired>
-	[[nodiscard]] auto get(const detail::variable_id<T, VariableType, IsRequired>& var_id)
+	template <typename T, bool IsRequired>
+	[[nodiscard]] auto get(const detail::variable_id<T, IsRequired>& var_id)
 	{
+		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
 		if constexpr (IsRequired) {
-			return std::any_cast<T>(m_prefix.m_registered_vars[var_id.m_idx].m_value);
+			return std::any_cast<T>(value);
 		} else {
-			return std::optional<T>{std::any_cast<T>(m_prefix.m_registered_vars[var_id.m_idx].m_value)};
+			return value.has_value() ? std::optional<T>{std::any_cast<T>(value)} : std::optional<T>{std::nullopt};
 		}
+	}
+
+	template <typename T, bool IsRequired>
+	[[nodiscard]] T get_or(const detail::variable_id<T, IsRequired>& var_id, const T default_value)
+	{
+		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
+		return value.has_value() ? std::any_cast<T>(value) : default_value;
 	}
 
 	[[nodiscard]] bool ok() const noexcept { return m_errors.empty() && m_warnings.empty(); }
@@ -123,7 +122,7 @@ class validated_prefix {
 			const auto env_var_value = "7TODO";
 			try {
 				var.m_value = var.m_parser_and_validator(env_var_value);
-			} catch (std::exception& e) {
+			} catch (const std::exception& e) {
 				m_errors.emplace_back(fmt::format("Variable '{}' with error '{}'", env_var_name, e.what()));
 			}
 		}
@@ -191,11 +190,39 @@ class prefix {
 	[[nodiscard]] auto register_variable(const std::string_view name,
 	                                     ParserAndValidatorFn parser_and_validator = default_parser_and_validator<T>{})
 	{
-		m_registered_vars.push_back(
-		    detail::variable_data{name, [parser_and_validator](const std::string_view env_value) -> std::any {
-			                          return parser_and_validator(env_value);
-		                          }});
-		return detail::variable_id<T, detail::variable_type::variable, false>{m_registered_vars.size() - 1};
+		return registration_helper<T, false>(name, std::move(parser_and_validator));
+	}
+
+	template <typename T, typename ParserAndValidatorFn = decltype(default_parser_and_validator<T>{})>
+	[[nodiscard]] auto
+	register_required_variable(const std::string_view name,
+	                           ParserAndValidatorFn parser_and_validator = default_parser_and_validator<T>{})
+	{
+		return registration_helper<T, true>(name, std::move(parser_and_validator));
+	}
+
+	template <typename T>
+	[[nodiscard]] auto register_range(const std::string_view name, const T min, const T max)
+	{
+		return registration_range_helper<T, false>(name, min, max);
+	}
+
+	template <typename T>
+	[[nodiscard]] auto register_required_range(const std::string_view name, const T min, const T max)
+	{
+		return registration_range_helper<T, true>(name, min, max);
+	}
+
+	template <typename T>
+	[[nodiscard]] auto register_option(const std::string_view name, const std::initializer_list<T> options)
+	{
+		return registration_option_helper<T, false>(name, options);
+	}
+
+	template <typename T>
+	[[nodiscard]] auto register_required_option(const std::string_view name, const std::initializer_list<T> options)
+	{
+		return registration_option_helper<T, true>(name, options);
 	}
 
 	[[nodiscard]] detail::validated_prefix<prefix> validate() { return {std::move(*this)}; }
@@ -203,6 +230,46 @@ class prefix {
 	[[nodiscard]] std::string help_message() const { return {}; }
 
   private:
+	template <typename T, bool IsRequired, typename ParserAndValidatorFn>
+	[[nodiscard]] auto registration_helper(const std::string_view name, ParserAndValidatorFn&& parser_and_validator)
+	{
+		const auto type_erased_parser_and_validator =
+		    [parser_and_validator](const std::string_view env_value) -> std::any {
+			return parser_and_validator(env_value);
+		};
+		m_registered_vars.push_back(detail::variable_data{name, std::move(type_erased_parser_and_validator)});
+		return detail::variable_id<T, IsRequired>{m_registered_vars.size() - 1};
+	}
+
+	template <typename T, bool IsRequired>
+	[[nodiscard]] auto registration_range_helper(const std::string_view name, const T min, const T max)
+	{
+		const auto validator = [min, max](const T& value) {
+			default_validator<T>{}(value);
+			if (value < min || value > max) {
+				throw range_error{fmt::format("Value {} outside of range [{}, {}]", value, min, max)};
+			}
+		};
+		return registration_helper<T, IsRequired>(name, default_parser{std::move(validator)});
+	}
+
+	template <typename T, bool IsRequired>
+	[[nodiscard]] auto registration_option_helper(const std::string_view name, const std::initializer_list<T> options)
+	{
+		const auto validator = [options = std::vector(options.begin(), options.end())](const T& value) {
+			default_validator<T>{}(value);
+			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
+				if constexpr (detail::util::has_to_string_v<T>) {
+					using std::to_string;
+					throw unrecognized_option{fmt::format("Unrecognized option '{}'", to_string(value))};
+				} else {
+					throw unrecognized_option{"Unrecognized option"};
+				}
+			}
+		};
+		return registration_helper<T, IsRequired>(name, default_parser{std::move(validator)});
+	}
+
 	std::string m_prefix_name;
 	int m_edit_distance_cutoff;
 	std::vector<detail::variable_data> m_registered_vars;

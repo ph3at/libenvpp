@@ -49,11 +49,6 @@ inline constexpr auto is_stringstream_constructible_v = is_stringstream_construc
 
 //////////////////////////////////////////////////////////////////////////
 
-class parser_error : public std::runtime_error {
-  public:
-	parser_error(const std::string_view message) : std::runtime_error(std::string(message)) {}
-};
-
 template <typename T>
 [[nodiscard]] T construct_from_string(const std::string_view str)
 {
