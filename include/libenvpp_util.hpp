@@ -102,17 +102,21 @@ template <typename T> using remove_fn_specifier_t = typename remove_fn_specifier
 template <typename Fn>
 struct function_traits
     : function_traits<remove_mem_fn_specifier_t<remove_fn_specifier_t<
-          std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<get_call_operator_t<Fn>>>>>>> {};
+          std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<get_call_operator_t<Fn>>>>>>> {
+	static constexpr bool is_member_function = std::is_member_function_pointer_v<std::remove_reference_t<Fn>>;
+};
 
 template <typename C, typename R, typename... A>
 struct function_traits<R (C::*)(A...)> : function_traits<R(A...)> {
 	using class_type = C;
+	static constexpr bool is_member_function = true;
 };
 
 template <typename R>
 struct function_traits<R()> {
 	using result_type = R;
 	static constexpr std::size_t arity = 0;
+	static constexpr bool is_member_function = false;
 };
 
 template <typename R, typename A0>
@@ -122,6 +126,7 @@ struct function_traits<R(A0)> {
 	template <std::size_t Index>
 	using arg_type = typename std::tuple_element_t<Index, std::tuple<A0>>;
 	static constexpr std::size_t arity = 1;
+	static constexpr bool is_member_function = false;
 };
 
 template <typename R, typename A0, typename A1>
@@ -132,6 +137,7 @@ struct function_traits<R(A0, A1)> {
 	template <std::size_t Index>
 	using arg_type = typename std::tuple_element_t<Index, std::tuple<A0, A1>>;
 	static constexpr std::size_t arity = 2;
+	static constexpr bool is_member_function = false;
 };
 
 template <typename R, typename A0, typename A1, typename A2>
@@ -143,6 +149,7 @@ struct function_traits<R(A0, A1, A2)> {
 	template <std::size_t Index>
 	using arg_type = typename std::tuple_element_t<Index, std::tuple<A0, A1, A2>>;
 	static constexpr std::size_t arity = 3;
+	static constexpr bool is_member_function = false;
 };
 
 template <typename R, typename A0, typename A1, typename A2, typename... A>
@@ -154,6 +161,7 @@ struct function_traits<R(A0, A1, A2, A...)> {
 	template <std::size_t Index>
 	using arg_type = typename std::tuple_element_t<Index, std::tuple<A0, A1, A2, A...>>;
 	static constexpr std::size_t arity = 3 + sizeof...(A);
+	static constexpr bool is_member_function = false;
 };
 
 } // namespace env::detail::util
