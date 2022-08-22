@@ -100,27 +100,27 @@ template <typename T> using remove_fn_specifier_t = typename remove_fn_specifier
 // clang-format on
 
 template <typename Fn>
-struct function_traits
-    : function_traits<remove_mem_fn_specifier_t<remove_fn_specifier_t<
+struct callable_traits
+    : callable_traits<remove_mem_fn_specifier_t<remove_fn_specifier_t<
           std::remove_pointer_t<std::remove_cv_t<std::remove_reference_t<get_call_operator_t<Fn>>>>>>> {
 	static constexpr bool is_member_function = std::is_member_function_pointer_v<std::remove_reference_t<Fn>>;
 };
 
 template <typename C, typename R, typename... A>
-struct function_traits<R (C::*)(A...)> : function_traits<R(A...)> {
+struct callable_traits<R (C::*)(A...)> : callable_traits<R(A...)> {
 	using class_type = C;
 	static constexpr bool is_member_function = true;
 };
 
 template <typename R>
-struct function_traits<R()> {
+struct callable_traits<R()> {
 	using result_type = R;
 	static constexpr std::size_t arity = 0;
 	static constexpr bool is_member_function = false;
 };
 
 template <typename R, typename A0>
-struct function_traits<R(A0)> {
+struct callable_traits<R(A0)> {
 	using result_type = R;
 	using arg0_type = A0;
 	template <std::size_t Index>
@@ -130,7 +130,7 @@ struct function_traits<R(A0)> {
 };
 
 template <typename R, typename A0, typename A1>
-struct function_traits<R(A0, A1)> {
+struct callable_traits<R(A0, A1)> {
 	using result_type = R;
 	using arg0_type = A0;
 	using arg1_type = A1;
@@ -141,7 +141,7 @@ struct function_traits<R(A0, A1)> {
 };
 
 template <typename R, typename A0, typename A1, typename A2>
-struct function_traits<R(A0, A1, A2)> {
+struct callable_traits<R(A0, A1, A2)> {
 	using result_type = R;
 	using arg0_type = A0;
 	using arg1_type = A1;
@@ -153,7 +153,7 @@ struct function_traits<R(A0, A1, A2)> {
 };
 
 template <typename R, typename A0, typename A1, typename A2, typename... A>
-struct function_traits<R(A0, A1, A2, A...)> {
+struct callable_traits<R(A0, A1, A2, A...)> {
 	using result_type = R;
 	using arg0_type = A0;
 	using arg1_type = A1;

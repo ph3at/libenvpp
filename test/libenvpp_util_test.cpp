@@ -16,7 +16,7 @@ TEST_CASE("Traits of user-defined functor type", "[libenvpp_util]")
 			struct void_to_void_functor {
 				void operator()() {}
 			};
-			using void_to_void_functor_traits = function_traits<void_to_void_functor>;
+			using void_to_void_functor_traits = callable_traits<void_to_void_functor>;
 			static_assert(std::is_same_v<void_to_void_functor_traits::result_type, void>);
 			static_assert(void_to_void_functor_traits::arity == 0);
 			static_assert(std::is_same_v<void_to_void_functor_traits::class_type, void_to_void_functor>);
@@ -27,7 +27,7 @@ TEST_CASE("Traits of user-defined functor type", "[libenvpp_util]")
 			struct int_to_int_functor {
 				int operator()(int) { return {}; }
 			};
-			using int_to_int_functor_traits = function_traits<int_to_int_functor>;
+			using int_to_int_functor_traits = callable_traits<int_to_int_functor>;
 			static_assert(std::is_same_v<int_to_int_functor_traits::result_type, int>);
 			static_assert(int_to_int_functor_traits::arity == 1);
 			static_assert(std::is_same_v<int_to_int_functor_traits::arg0_type, int>);
@@ -43,7 +43,7 @@ TEST_CASE("Traits of user-defined functor type", "[libenvpp_util]")
 			struct const_functor {
 				void operator()() const {}
 			};
-			using const_functor_traits = function_traits<const_functor>;
+			using const_functor_traits = callable_traits<const_functor>;
 			static_assert(std::is_same_v<const_functor_traits::result_type, void>);
 			static_assert(const_functor_traits::arity == 0);
 			static_assert(std::is_same_v<const_functor_traits::class_type, const_functor>);
@@ -54,7 +54,7 @@ TEST_CASE("Traits of user-defined functor type", "[libenvpp_util]")
 			struct noexcept_functor {
 				void operator()() noexcept {}
 			};
-			using noexcept_functor_traits = function_traits<noexcept_functor>;
+			using noexcept_functor_traits = callable_traits<noexcept_functor>;
 			static_assert(std::is_same_v<noexcept_functor_traits::result_type, void>);
 			static_assert(noexcept_functor_traits::arity == 0);
 			static_assert(std::is_same_v<noexcept_functor_traits::class_type, noexcept_functor>);
@@ -69,7 +69,7 @@ TEST_CASE("Traits of user-defined functor type", "[libenvpp_util]")
 		};
 
 		[](const auto& fn) {
-			using functor_traits = function_traits<decltype(fn)>;
+			using functor_traits = callable_traits<decltype(fn)>;
 			static_assert(std::is_same_v<typename functor_traits::result_type, void>);
 			static_assert(functor_traits::arity == 0);
 			static_assert(std::is_same_v<typename functor_traits::class_type, functor>);
@@ -77,7 +77,7 @@ TEST_CASE("Traits of user-defined functor type", "[libenvpp_util]")
 		}(functor{});
 
 		[](auto&& fn) {
-			using functor_traits = function_traits<decltype(fn)>;
+			using functor_traits = callable_traits<decltype(fn)>;
 			static_assert(std::is_same_v<typename functor_traits::result_type, void>);
 			static_assert(functor_traits::arity == 0);
 			static_assert(std::is_same_v<typename functor_traits::class_type, functor>);
@@ -91,19 +91,19 @@ TEST_CASE("Traits of std::function functor type", "[libenvpp_util]")
 	SECTION("Signature")
 	{
 		{
-			using void_void_function_traits = function_traits<std::function<void()>>;
-			static_assert(std::is_same_v<void_void_function_traits::result_type, void>);
-			static_assert(void_void_function_traits::arity == 0);
-			static_assert(void_void_function_traits::is_member_function == false);
+			using void_void_callable_traits = callable_traits<std::function<void()>>;
+			static_assert(std::is_same_v<void_void_callable_traits::result_type, void>);
+			static_assert(void_void_callable_traits::arity == 0);
+			static_assert(void_void_callable_traits::is_member_function == false);
 		}
 
 		{
-			using int_to_int_function_traits = function_traits<std::function<int(int)>>;
-			static_assert(std::is_same_v<int_to_int_function_traits::result_type, int>);
-			static_assert(int_to_int_function_traits::arity == 1);
-			static_assert(std::is_same_v<int_to_int_function_traits::arg0_type, int>);
-			static_assert(std::is_same_v<int_to_int_function_traits::arg_type<0>, int>);
-			static_assert(int_to_int_function_traits::is_member_function == false);
+			using int_to_int_callable_traits = callable_traits<std::function<int(int)>>;
+			static_assert(std::is_same_v<int_to_int_callable_traits::result_type, int>);
+			static_assert(int_to_int_callable_traits::arity == 1);
+			static_assert(std::is_same_v<int_to_int_callable_traits::arg0_type, int>);
+			static_assert(std::is_same_v<int_to_int_callable_traits::arg_type<0>, int>);
+			static_assert(int_to_int_callable_traits::is_member_function == false);
 		}
 	}
 }
@@ -114,7 +114,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 	{
 		{
 			const auto const_lambda = []() {};
-			using const_lambda_traits = function_traits<decltype(const_lambda)>;
+			using const_lambda_traits = callable_traits<decltype(const_lambda)>;
 			static_assert(std::is_same_v<const_lambda_traits::result_type, void>);
 			static_assert(const_lambda_traits::arity == 0);
 			static_assert(std::is_same_v<std::add_const_t<const_lambda_traits::class_type>, decltype(const_lambda)>);
@@ -123,7 +123,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 
 		{
 			volatile auto volatile_lambda = []() {};
-			using volatile_lambda_traits = function_traits<decltype(volatile_lambda)>;
+			using volatile_lambda_traits = callable_traits<decltype(volatile_lambda)>;
 			static_assert(std::is_same_v<volatile_lambda_traits::result_type, void>);
 			static_assert(volatile_lambda_traits::arity == 0);
 			static_assert(
@@ -133,7 +133,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 
 		{
 			auto lambda = []() {};
-			using lambda_traits = function_traits<decltype(lambda)>;
+			using lambda_traits = callable_traits<decltype(lambda)>;
 			static_assert(std::is_same_v<lambda_traits::result_type, void>);
 			static_assert(lambda_traits::arity == 0);
 			static_assert(std::is_same_v<lambda_traits::class_type, decltype(lambda)>);
@@ -142,7 +142,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 
 		{
 			auto mutable_lambda = []() mutable {};
-			using mutable_lambda_traits = function_traits<decltype(mutable_lambda)>;
+			using mutable_lambda_traits = callable_traits<decltype(mutable_lambda)>;
 			static_assert(std::is_same_v<mutable_lambda_traits::result_type, void>);
 			static_assert(mutable_lambda_traits::arity == 0);
 			static_assert(std::is_same_v<mutable_lambda_traits::class_type, decltype(mutable_lambda)>);
@@ -151,7 +151,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 
 		auto lambda = []() {};
 		[](auto& ref_lambda) {
-			using ref_lambda_traits = function_traits<decltype(ref_lambda)>;
+			using ref_lambda_traits = callable_traits<decltype(ref_lambda)>;
 			static_assert(std::is_same_v<typename ref_lambda_traits::result_type, void>);
 			static_assert(ref_lambda_traits::arity == 0);
 			static_assert(std::is_same_v<std::add_lvalue_reference_t<typename ref_lambda_traits::class_type>,
@@ -160,7 +160,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 		}(lambda);
 
 		[](const auto& const_ref_lambda) {
-			using const_ref_lambda_traits = function_traits<decltype(const_ref_lambda)>;
+			using const_ref_lambda_traits = callable_traits<decltype(const_ref_lambda)>;
 			static_assert(std::is_same_v<typename const_ref_lambda_traits::result_type, void>);
 			static_assert(const_ref_lambda_traits::arity == 0);
 			static_assert(std::is_same_v<
@@ -170,7 +170,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 		}([]() {});
 
 		[](auto&& rvalue_ref_lambda) {
-			using rvalue_ref_lambda_traits = function_traits<decltype(rvalue_ref_lambda)>;
+			using rvalue_ref_lambda_traits = callable_traits<decltype(rvalue_ref_lambda)>;
 			static_assert(std::is_same_v<typename rvalue_ref_lambda_traits::result_type, void>);
 			static_assert(rvalue_ref_lambda_traits::arity == 0);
 			static_assert(std::is_same_v<std::add_rvalue_reference_t<typename rvalue_ref_lambda_traits::class_type>,
@@ -183,7 +183,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 	{
 		{
 			constexpr auto void_to_int_lambda = []() -> int { return {}; };
-			using void_to_int_lambda_traits = function_traits<decltype(void_to_int_lambda)>;
+			using void_to_int_lambda_traits = callable_traits<decltype(void_to_int_lambda)>;
 			static_assert(std::is_same_v<void_to_int_lambda_traits::result_type, int>);
 			static_assert(void_to_int_lambda_traits::arity == 0);
 			static_assert(void_to_int_lambda_traits::is_member_function == false);
@@ -191,7 +191,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 
 		{
 			constexpr auto int_to_void_lambda = [](int) {};
-			using int_to_void_lambda_traits = function_traits<decltype(int_to_void_lambda)>;
+			using int_to_void_lambda_traits = callable_traits<decltype(int_to_void_lambda)>;
 			static_assert(std::is_same_v<int_to_void_lambda_traits::result_type, void>);
 			static_assert(int_to_void_lambda_traits::arity == 1);
 			static_assert(std::is_same_v<int_to_void_lambda_traits::arg0_type, int>);
@@ -201,7 +201,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 
 		{
 			constexpr auto int_to_int_lambda = [](int) -> int* { return {}; };
-			using int_to_int_lambda_traits = function_traits<decltype(int_to_int_lambda)>;
+			using int_to_int_lambda_traits = callable_traits<decltype(int_to_int_lambda)>;
 			static_assert(std::is_same_v<int_to_int_lambda_traits::result_type, int*>);
 			static_assert(int_to_int_lambda_traits::arity == 1);
 			static_assert(std::is_same_v<int_to_int_lambda_traits::arg0_type, int>);
@@ -211,7 +211,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 
 		{
 			constexpr auto two_arg_lambda = [](int, float*) -> const char* { return {}; };
-			using two_arg_lambda_traits = function_traits<decltype(two_arg_lambda)>;
+			using two_arg_lambda_traits = callable_traits<decltype(two_arg_lambda)>;
 			static_assert(std::is_same_v<two_arg_lambda_traits::result_type, const char*>);
 			static_assert(two_arg_lambda_traits::arity == 2);
 			static_assert(std::is_same_v<two_arg_lambda_traits::arg0_type, int>);
@@ -226,7 +226,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 			{
 				return {};
 			};
-			using three_arg_lambda_traits = function_traits<decltype(three_arg_lambda)>;
+			using three_arg_lambda_traits = callable_traits<decltype(three_arg_lambda)>;
 			static_assert(std::is_same_v<three_arg_lambda_traits::result_type, volatile float*>);
 			static_assert(three_arg_lambda_traits::arity == 3);
 			static_assert(std::is_same_v<three_arg_lambda_traits::arg0_type, const volatile int*>);
@@ -243,7 +243,7 @@ TEST_CASE("Traits of lambdas without captures", "[libenvpp_util]")
 			{
 				return {};
 			};
-			using four_arg_lambda_traits = function_traits<decltype(four_arg_lambda)>;
+			using four_arg_lambda_traits = callable_traits<decltype(four_arg_lambda)>;
 			static_assert(std::is_same_v<four_arg_lambda_traits::result_type, const volatile std::string*>);
 			static_assert(four_arg_lambda_traits::arity == 4);
 			static_assert(std::is_same_v<four_arg_lambda_traits::arg0_type, int&>);
@@ -264,7 +264,7 @@ TEST_CASE("Traits of lambdas with captures", "[libenvpp_util]")
 
 	{
 		const auto lambda_with_value_capture = [value]() { static_cast<void>(value); };
-		using lambda_with_value_capture_traits = function_traits<decltype(lambda_with_value_capture)>;
+		using lambda_with_value_capture_traits = callable_traits<decltype(lambda_with_value_capture)>;
 		static_assert(std::is_same_v<lambda_with_value_capture_traits::result_type, void>);
 		static_assert(lambda_with_value_capture_traits::arity == 0);
 		static_assert(lambda_with_value_capture_traits::is_member_function == false);
@@ -272,7 +272,7 @@ TEST_CASE("Traits of lambdas with captures", "[libenvpp_util]")
 
 	{
 		const auto lambda_with_implicit_value_capture = [=]() { static_cast<void>(value); };
-		using lambda_with_implicit_value_capture_traits = function_traits<decltype(lambda_with_implicit_value_capture)>;
+		using lambda_with_implicit_value_capture_traits = callable_traits<decltype(lambda_with_implicit_value_capture)>;
 		static_assert(std::is_same_v<lambda_with_implicit_value_capture_traits::result_type, void>);
 		static_assert(lambda_with_implicit_value_capture_traits::arity == 0);
 		static_assert(lambda_with_implicit_value_capture_traits::is_member_function == false);
@@ -280,7 +280,7 @@ TEST_CASE("Traits of lambdas with captures", "[libenvpp_util]")
 
 	{
 		const auto lambda_with_mutable_value_capture = [value]() mutable { value = 4; };
-		using lambda_with_mutable_value_capture_traits = function_traits<decltype(lambda_with_mutable_value_capture)>;
+		using lambda_with_mutable_value_capture_traits = callable_traits<decltype(lambda_with_mutable_value_capture)>;
 		static_assert(std::is_same_v<lambda_with_mutable_value_capture_traits::result_type, void>);
 		static_assert(lambda_with_mutable_value_capture_traits::arity == 0);
 		static_assert(lambda_with_mutable_value_capture_traits::is_member_function == false);
@@ -288,7 +288,7 @@ TEST_CASE("Traits of lambdas with captures", "[libenvpp_util]")
 
 	{
 		const auto lambda_with_ref_capture = [&value]() { value = 42; };
-		using lambda_with_ref_capture_traits = function_traits<decltype(lambda_with_ref_capture)>;
+		using lambda_with_ref_capture_traits = callable_traits<decltype(lambda_with_ref_capture)>;
 		static_assert(std::is_same_v<lambda_with_ref_capture_traits::result_type, void>);
 		static_assert(lambda_with_ref_capture_traits::arity == 0);
 		static_assert(lambda_with_ref_capture_traits::is_member_function == false);
@@ -296,7 +296,7 @@ TEST_CASE("Traits of lambdas with captures", "[libenvpp_util]")
 
 	{
 		const auto lambda_with_implicit_ref_capture = [&]() { static_cast<void>(value); };
-		using lambda_with_implicit_ref_capture_traits = function_traits<decltype(lambda_with_implicit_ref_capture)>;
+		using lambda_with_implicit_ref_capture_traits = callable_traits<decltype(lambda_with_implicit_ref_capture)>;
 		static_assert(std::is_same_v<lambda_with_implicit_ref_capture_traits::result_type, void>);
 		static_assert(lambda_with_implicit_ref_capture_traits::arity == 0);
 		static_assert(lambda_with_implicit_ref_capture_traits::is_member_function == false);
@@ -308,13 +308,13 @@ TEST_CASE("Traits of lambdas with captures", "[libenvpp_util]")
 			void f()
 			{
 				const auto lambda_with_this_ref_capture = [this]() { value = 1; };
-				using lambda_with_this_ref_capture_traits = function_traits<decltype(lambda_with_this_ref_capture)>;
+				using lambda_with_this_ref_capture_traits = callable_traits<decltype(lambda_with_this_ref_capture)>;
 				static_assert(std::is_same_v<lambda_with_this_ref_capture_traits::result_type, void>);
 				static_assert(lambda_with_this_ref_capture_traits::arity == 0);
 				static_assert(lambda_with_this_ref_capture_traits::is_member_function == false);
 
 				const auto lambda_with_this_value_capture = [*this]() { static_cast<void>(value); };
-				using lambda_with_this_value_capture_traits = function_traits<decltype(lambda_with_this_value_capture)>;
+				using lambda_with_this_value_capture_traits = callable_traits<decltype(lambda_with_this_value_capture)>;
 				static_assert(std::is_same_v<lambda_with_this_value_capture_traits::result_type, void>);
 				static_assert(lambda_with_this_value_capture_traits::arity == 0);
 				static_assert(lambda_with_this_value_capture_traits::is_member_function == false);
@@ -322,13 +322,13 @@ TEST_CASE("Traits of lambdas with captures", "[libenvpp_util]")
 			void c() const
 			{
 				const auto lambda_with_this_ref_capture = [this]() { static_cast<void>(value); };
-				using lambda_with_this_ref_capture_traits = function_traits<decltype(lambda_with_this_ref_capture)>;
+				using lambda_with_this_ref_capture_traits = callable_traits<decltype(lambda_with_this_ref_capture)>;
 				static_assert(std::is_same_v<lambda_with_this_ref_capture_traits::result_type, void>);
 				static_assert(lambda_with_this_ref_capture_traits::arity == 0);
 				static_assert(lambda_with_this_ref_capture_traits::is_member_function == false);
 
 				const auto lambda_with_this_value_capture = [*this]() { static_cast<void>(value); };
-				using lambda_with_this_value_capture_traits = function_traits<decltype(lambda_with_this_value_capture)>;
+				using lambda_with_this_value_capture_traits = callable_traits<decltype(lambda_with_this_value_capture)>;
 				static_assert(std::is_same_v<lambda_with_this_value_capture_traits::result_type, void>);
 				static_assert(lambda_with_this_value_capture_traits::arity == 0);
 				static_assert(lambda_with_this_value_capture_traits::is_member_function == false);
@@ -352,14 +352,14 @@ TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 	SECTION("Function type")
 	{
 		{
-			using void_to_void_fn_traits = function_traits<decltype(void_to_void_fn)>;
+			using void_to_void_fn_traits = callable_traits<decltype(void_to_void_fn)>;
 			static_assert(std::is_same_v<void_to_void_fn_traits::result_type, void>);
 			static_assert(void_to_void_fn_traits::arity == 0);
 			static_assert(void_to_void_fn_traits::is_member_function == false);
 		}
 
 		{
-			using int_to_void_fn_traits = function_traits<decltype(int_to_void_fn)>;
+			using int_to_void_fn_traits = callable_traits<decltype(int_to_void_fn)>;
 			static_assert(std::is_same_v<int_to_void_fn_traits::result_type, void>);
 			static_assert(int_to_void_fn_traits::arity == 1);
 			static_assert(std::is_same_v<int_to_void_fn_traits::arg0_type, int>);
@@ -368,7 +368,7 @@ TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 		}
 
 		{
-			using int_to_int_fn_traits = function_traits<decltype(int_to_int_fn)>;
+			using int_to_int_fn_traits = callable_traits<decltype(int_to_int_fn)>;
 			static_assert(std::is_same_v<int_to_int_fn_traits::result_type, int>);
 			static_assert(int_to_int_fn_traits::arity == 1);
 			static_assert(std::is_same_v<int_to_int_fn_traits::arg0_type, int>);
@@ -377,7 +377,7 @@ TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 		}
 
 		{
-			using noexcept_fn_traits = function_traits<decltype(noexcept_fn)>;
+			using noexcept_fn_traits = callable_traits<decltype(noexcept_fn)>;
 			static_assert(std::is_same_v<noexcept_fn_traits::result_type, void>);
 			static_assert(noexcept_fn_traits::arity == 0);
 			static_assert(noexcept_fn_traits::is_member_function == false);
@@ -388,7 +388,7 @@ TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 	{
 		{
 			auto void_to_void_fn_ptr = void_to_void_fn;
-			using void_to_void_fn_ptr_traits = function_traits<decltype(void_to_void_fn_ptr)>;
+			using void_to_void_fn_ptr_traits = callable_traits<decltype(void_to_void_fn_ptr)>;
 			static_assert(std::is_same_v<void_to_void_fn_ptr_traits::result_type, void>);
 			static_assert(void_to_void_fn_ptr_traits::arity == 0);
 			static_assert(void_to_void_fn_ptr_traits::is_member_function == false);
@@ -396,7 +396,7 @@ TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 
 		{
 			volatile auto int_to_void_fn_ptr = int_to_void_fn;
-			using int_to_void_fn_ptr_traits = function_traits<decltype(int_to_void_fn_ptr)>;
+			using int_to_void_fn_ptr_traits = callable_traits<decltype(int_to_void_fn_ptr)>;
 			static_assert(std::is_same_v<int_to_void_fn_ptr_traits::result_type, void>);
 			static_assert(int_to_void_fn_ptr_traits::arity == 1);
 			static_assert(std::is_same_v<int_to_void_fn_ptr_traits::arg0_type, int>);
@@ -406,7 +406,7 @@ TEST_CASE("Traits of free standing functions", "[libenvpp_util]")
 
 		{
 			const volatile auto int_to_int_fn_ptr = int_to_int_fn;
-			using int_to_int_fn_ptr_traits = function_traits<decltype(int_to_int_fn_ptr)>;
+			using int_to_int_fn_ptr_traits = callable_traits<decltype(int_to_int_fn_ptr)>;
 			static_assert(std::is_same_v<int_to_int_fn_ptr_traits::result_type, int>);
 			static_assert(int_to_int_fn_ptr_traits::arity == 1);
 			static_assert(std::is_same_v<int_to_int_fn_ptr_traits::arg0_type, int>);
@@ -427,7 +427,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 	SECTION("Member function type")
 	{
 		{
-			using void_to_void_mem_fn_traits = function_traits<decltype(&type::void_to_void_mem_fn)>;
+			using void_to_void_mem_fn_traits = callable_traits<decltype(&type::void_to_void_mem_fn)>;
 			static_assert(std::is_same_v<void_to_void_mem_fn_traits::result_type, void>);
 			static_assert(std::is_same_v<void_to_void_mem_fn_traits::class_type, type>);
 			static_assert(void_to_void_mem_fn_traits::arity == 0);
@@ -435,7 +435,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 		}
 
 		{
-			using void_to_int_mem_fn_traits = function_traits<decltype(&type::void_to_int_mem_fn)>;
+			using void_to_int_mem_fn_traits = callable_traits<decltype(&type::void_to_int_mem_fn)>;
 			static_assert(std::is_same_v<void_to_int_mem_fn_traits::result_type, int>);
 			static_assert(std::is_same_v<void_to_int_mem_fn_traits::class_type, type>);
 			static_assert(void_to_int_mem_fn_traits::arity == 0);
@@ -443,7 +443,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 		}
 
 		{
-			using int_to_int_mem_fn_traits = function_traits<decltype(&type::int_to_int_mem_fn)>;
+			using int_to_int_mem_fn_traits = callable_traits<decltype(&type::int_to_int_mem_fn)>;
 			static_assert(std::is_same_v<int_to_int_mem_fn_traits::result_type, int>);
 			static_assert(std::is_same_v<int_to_int_mem_fn_traits::class_type, type>);
 			static_assert(int_to_int_mem_fn_traits::arity == 1);
@@ -509,7 +509,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 
 		for_constexpr(
 		    [](auto&& fn) {
-			    using fn_traits = function_traits<decltype(fn)>;
+			    using fn_traits = callable_traits<decltype(fn)>;
 			    static_assert(std::is_same_v<typename fn_traits::result_type, void>);
 			    static_assert(std::is_same_v<typename fn_traits::class_type, specifiers>);
 			    static_assert(fn_traits::arity == 0);
@@ -531,7 +531,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 	SECTION("Inheritance member function specifiers")
 	{
 		{
-			using pure_virtual_mem_fn_traits = function_traits<decltype(&base::pure_virtual_mem_fn)>;
+			using pure_virtual_mem_fn_traits = callable_traits<decltype(&base::pure_virtual_mem_fn)>;
 			static_assert(std::is_same_v<pure_virtual_mem_fn_traits::result_type, void>);
 			static_assert(std::is_same_v<pure_virtual_mem_fn_traits::class_type, base>);
 			static_assert(pure_virtual_mem_fn_traits::arity == 0);
@@ -539,7 +539,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 		}
 
 		{
-			using virtual_mem_fn_traits = function_traits<decltype(&base::virtual_mem_fn)>;
+			using virtual_mem_fn_traits = callable_traits<decltype(&base::virtual_mem_fn)>;
 			static_assert(std::is_same_v<virtual_mem_fn_traits::result_type, void>);
 			static_assert(std::is_same_v<virtual_mem_fn_traits::class_type, base>);
 			static_assert(virtual_mem_fn_traits::arity == 0);
@@ -547,7 +547,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 		}
 
 		{
-			using inherited_pure_virtual_mem_fn_traits = function_traits<decltype(&inherited::pure_virtual_mem_fn)>;
+			using inherited_pure_virtual_mem_fn_traits = callable_traits<decltype(&inherited::pure_virtual_mem_fn)>;
 			static_assert(std::is_same_v<inherited_pure_virtual_mem_fn_traits::result_type, void>);
 			static_assert(std::is_same_v<inherited_pure_virtual_mem_fn_traits::class_type, inherited>);
 			static_assert(inherited_pure_virtual_mem_fn_traits::arity == 0);
@@ -555,7 +555,7 @@ TEST_CASE("Member function traits", "[libenvpp_util]")
 		}
 
 		{
-			using inherited_virtual_mem_fn_traits = function_traits<decltype(&inherited::virtual_mem_fn)>;
+			using inherited_virtual_mem_fn_traits = callable_traits<decltype(&inherited::virtual_mem_fn)>;
 			static_assert(std::is_same_v<inherited_virtual_mem_fn_traits::result_type, void>);
 			static_assert(std::is_same_v<inherited_virtual_mem_fn_traits::class_type, inherited>);
 			static_assert(inherited_virtual_mem_fn_traits::arity == 0);

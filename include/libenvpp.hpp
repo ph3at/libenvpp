@@ -171,7 +171,7 @@ struct default_parser_and_validator {
 
 template <typename Validator>
 default_parser(Validator) -> default_parser<
-    std::remove_cv_t<std::remove_reference_t<typename detail::util::function_traits<Validator>::arg0_type>>>;
+    std::remove_cv_t<std::remove_reference_t<typename detail::util::callable_traits<Validator>::arg0_type>>>;
 
 class prefix {
   public:
