@@ -53,6 +53,7 @@ class variable_data {
 
 	std::string m_name;
 	parser_and_validator_fn m_parser_and_validator;
+	std::string m_value_str;
 	std::any m_value;
 
 	friend prefix;
@@ -164,6 +165,7 @@ class parsed_and_validated_prefix {
 				m_errors.emplace_back(fmt::format("Environment variable '{}' not set", env_var_name));
 			} else {
 				try {
+					var.m_value_str = *env_var_value;
 					var.m_value = var.m_parser_and_validator(*env_var_value);
 				} catch (const parser_error& e) {
 					m_errors.push_back(e);
@@ -277,15 +279,13 @@ class prefix {
 		if (options_set.size() != options.size()) {
 			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", name)};
 		}
-		const auto validator = [options = std::move(options_set)](const T& value) {
+		const auto var_id = m_registered_vars.size();
+		const auto validator = [var_id, name = std::string(name), options = std::move(options_set)](const T& value) {
 			default_validator<T>{}(value);
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
-				if constexpr (detail::util::has_to_string_v<T>) {
-					using std::to_string;
-					throw unrecognized_option{fmt::format("Unrecognized option '{}'", to_string(value))};
-				} else {
-					throw unrecognized_option{"Unrecognized option"};
-				}
+				// T might not be printable (e.g. enum type), so use string representation instead.
+				const auto& value_str = m_registered_vars[var_id].m_value_str;
+				throw unrecognized_option{fmt::format("Unrecognized option '{}' for '{}'", value_str, name)};
 			}
 		};
 		return registration_helper<T, IsRequired>(name, default_parser{std::move(validator)});

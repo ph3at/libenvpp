@@ -41,18 +41,6 @@ enum class testing_option {
 	THIRD_OPTION,
 };
 
-std::string to_string(const testing_option& option)
-{
-	if (option == testing_option::FIRST_OPTION) {
-		return "FIRST_OPTION";
-	} else if (option == testing_option::SECOND_OPTION) {
-		return "SECOND_OPTION";
-	} else if (option == testing_option::THIRD_OPTION) {
-		return "THIRD_OPTION";
-	}
-	return "unknown";
-}
-
 template <>
 class default_parser<testing_option> {
   public:
