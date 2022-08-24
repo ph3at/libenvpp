@@ -92,6 +92,12 @@ class variable_id {
 	variable_id& operator=(const variable_id&) = delete;
 	variable_id& operator=(variable_id&&) = default;
 
+	bool operator==(const std::size_t rhs) const noexcept { return m_idx == rhs; }
+	bool operator!=(const std::size_t rhs) const noexcept { return !(*this == rhs); }
+
+	friend bool operator==(const std::size_t lhs, const variable_id& rhs) noexcept { return rhs == lhs; }
+	friend bool operator!=(const std::size_t lhs, const variable_id& rhs) noexcept { return !(lhs == rhs); }
+
   private:
 	variable_id(const std::size_t idx) : m_idx(idx) {}
 
@@ -136,40 +142,41 @@ class parsed_and_validated_prefix {
 	[[nodiscard]] std::string error_message() const { return {}; }
 	[[nodiscard]] std::string warning_message() const { return {}; }
 
-	[[nodiscard]] const std::vector<parser_error>& errors() const { return m_errors; }
-	[[nodiscard]] const std::vector<unrecognized_option>& warnings() const { return m_warnings; }
+	[[nodiscard]] const std::vector<error>& errors() const { return m_errors; }
+	[[nodiscard]] const std::vector<error>& warnings() const { return m_warnings; }
 
   private:
 	parsed_and_validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
 	{
-		for (auto& var : m_prefix.m_registered_vars) {
+		for (std::size_t id = 0; id < m_prefix.m_registered_vars.size(); ++id) {
+			auto& var = m_prefix.m_registered_vars[id];
 			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
 			const auto env_var_value = detail::get_environment_variable(env_var_name);
 			if (!env_var_value.has_value()) {
-				m_errors.emplace_back(fmt::format("Environment variable '{}' not set", env_var_name));
+				m_errors.emplace_back(id, fmt::format("Environment variable '{}' not set", env_var_name));
 			} else {
 				try {
 					var.m_value = var.m_parser_and_validator(*env_var_value);
 				} catch (const parser_error& e) {
-					m_errors.push_back(e);
+					m_errors.emplace_back(id, fmt::format("Parser error: ", e.what()));
 				} catch (const range_error& e) {
-					m_errors.emplace_back(e.what());
+					m_errors.emplace_back(id, fmt::format("Range error: ", e.what()));
 				} catch (const std::exception& e) {
 					m_errors.emplace_back(
-					    fmt::format("Failed to parse or validate environment variable '{}' with error '{}'",
-					                env_var_name, e.what()));
+					    id, fmt::format("Failed to parse or validate environment variable '{}' with error '{}'",
+					                    env_var_name, e.what()));
 				} catch (...) {
 					m_errors.emplace_back(
-					    fmt::format("Failed to parse or validate environment variable '{}' with error unknown error",
-					                env_var_name));
+					    id, fmt::format("Failed to parse or validate environment variable '{}' with unknown error",
+					                    env_var_name));
 				}
 			}
 		}
 	}
 
 	Prefix m_prefix;
-	std::vector<parser_error> m_errors;
-	std::vector<unrecognized_option> m_warnings;
+	std::vector<error> m_errors;
+	std::vector<error> m_warnings;
 
 	friend prefix;
 };

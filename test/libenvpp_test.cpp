@@ -111,4 +111,20 @@ TEST_CASE_METHOD(option_var_fixture, "Retrieving option environment variable", "
 	CHECK(*option_val == testing_option::SECOND_OPTION);
 }
 
+TEST_CASE("Relating errors to IDs", "[libenvpp]")
+{
+	auto pre = env::prefix("PREFIX");
+	const auto foo_id = pre.register_variable<int>("FOO");
+	auto parsed_pre = pre.parse_and_validate();
+	if (!parsed_pre.ok()) {
+		for (const auto& err : parsed_pre.errors()) {
+			const auto err_id = err.get_id();
+			CHECK(err_id == foo_id);
+			CHECK_FALSE(err_id != foo_id);
+			CHECK(foo_id == err_id);
+			CHECK_FALSE(foo_id != err_id);
+		}
+	}
+}
+
 } // namespace env
