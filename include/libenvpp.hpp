@@ -273,7 +273,11 @@ class prefix {
 	template <typename T, bool IsRequired>
 	[[nodiscard]] auto registration_option_helper(const std::string_view name, const std::initializer_list<T> options)
 	{
-		const auto validator = [options = std::vector(options.begin(), options.end())](const T& value) {
+		const auto options_set = std::set(options.begin(), options.end());
+		if (options_set.size() != options.size()) {
+			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", name)};
+		}
+		const auto validator = [options = std::move(options_set)](const T& value) {
 			default_validator<T>{}(value);
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
 				if constexpr (detail::util::has_to_string_v<T>) {
