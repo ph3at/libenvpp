@@ -21,6 +21,7 @@
 
 #include <fmt/core.h>
 
+#include <libenvpp_env.hpp>
 #include <libenvpp_errors.hpp>
 #include <libenvpp_parser.hpp>
 #include <libenvpp_util.hpp>
@@ -158,11 +159,25 @@ class parsed_and_validated_prefix {
 	{
 		for (auto& var : m_prefix.m_registered_vars) {
 			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
-			const auto env_var_value = "7TODO";
-			try {
-				var.m_value = var.m_parser_and_validator(env_var_value);
-			} catch (const std::exception& e) {
-				m_errors.emplace_back(fmt::format("Variable '{}' with error '{}'", env_var_name, e.what()));
+			const auto env_var_value = detail::get_environment_variable(env_var_name);
+			if (!env_var_value.has_value()) {
+				m_errors.emplace_back(fmt::format("Environment variable '{}' not set", env_var_name));
+			} else {
+				try {
+					var.m_value = var.m_parser_and_validator(*env_var_value);
+				} catch (const parser_error& e) {
+					m_errors.push_back(e);
+				} catch (const range_error& e) {
+					m_errors.emplace_back(e.what());
+				} catch (const std::exception& e) {
+					m_errors.emplace_back(
+					    fmt::format("Failed to parse or validate environment variable '{}' with error '{}'",
+					                env_var_name, e.what()));
+				} catch (...) {
+					m_errors.emplace_back(
+					    fmt::format("Failed to parse or validate environment variable '{}' with error unknown error",
+					                env_var_name));
+				}
 			}
 		}
 	}
