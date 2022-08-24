@@ -48,7 +48,7 @@ class variable_id {
 
 	friend prefix;
 	template <typename Prefix>
-	friend class validated_prefix;
+	friend class parsed_and_validated_prefix;
 };
 
 class variable_data {
@@ -74,20 +74,20 @@ class variable_data {
 
 	friend prefix;
 	template <typename Prefix>
-	friend class validated_prefix;
+	friend class parsed_and_validated_prefix;
 };
 
 // Templated to resolve mutual dependency.
 template <typename Prefix>
-class validated_prefix {
+class parsed_and_validated_prefix {
   public:
-	validated_prefix() = delete;
+	parsed_and_validated_prefix() = delete;
 
-	validated_prefix(const validated_prefix&) = delete;
-	validated_prefix(validated_prefix&&) = default;
+	parsed_and_validated_prefix(const parsed_and_validated_prefix&) = delete;
+	parsed_and_validated_prefix(parsed_and_validated_prefix&&) = default;
 
-	validated_prefix& operator=(const validated_prefix&) = delete;
-	validated_prefix& operator=(validated_prefix&&) = default;
+	parsed_and_validated_prefix& operator=(const parsed_and_validated_prefix&) = delete;
+	parsed_and_validated_prefix& operator=(parsed_and_validated_prefix&&) = default;
 
 	template <typename T, bool IsRequired>
 	[[nodiscard]] auto get(const detail::variable_id<T, IsRequired>& var_id)
@@ -115,7 +115,7 @@ class validated_prefix {
 	[[nodiscard]] const std::vector<unrecognized_option>& warnings() const { return m_warnings; }
 
   private:
-	validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
+	parsed_and_validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
 	{
 		for (auto& var : m_prefix.m_registered_vars) {
 			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
@@ -225,7 +225,7 @@ class prefix {
 		return registration_option_helper<T, true>(name, options);
 	}
 
-	[[nodiscard]] detail::validated_prefix<prefix> validate() { return {std::move(*this)}; }
+	[[nodiscard]] detail::parsed_and_validated_prefix<prefix> parse_and_validate() { return {std::move(*this)}; }
 
 	[[nodiscard]] std::string help_message() const { return {}; }
 
@@ -275,7 +275,7 @@ class prefix {
 	std::vector<detail::variable_data> m_registered_vars;
 
 	template <typename Prefix>
-	friend class detail::validated_prefix;
+	friend class detail::parsed_and_validated_prefix;
 };
 
 } // namespace env

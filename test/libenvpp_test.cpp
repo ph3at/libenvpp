@@ -28,23 +28,23 @@ TEST_CASE("Interface", "[libenvpp]")
 		    return std::string(str);
 	    });
 
-	auto validated_pre = pre.validate();
+	auto parsed_and_validated_pre = pre.parse_and_validate();
 
-	if (!validated_pre.ok()) {
-		std::cout << validated_pre.error_message() << std::endl;
-		std::cout << validated_pre.warning_message() << std::endl;
+	if (!parsed_and_validated_pre.ok()) {
+		std::cout << parsed_and_validated_pre.error_message() << std::endl;
+		std::cout << parsed_and_validated_pre.warning_message() << std::endl;
 
-		for (const auto& error : validated_pre.errors()) {
+		for (const auto& error : parsed_and_validated_pre.errors()) {
 			std::cout << error.what() << std::endl;
 		}
 
-		for (const auto& warning : validated_pre.warnings()) {
+		for (const auto& warning : parsed_and_validated_pre.warnings()) {
 			std::cout << warning.what() << std::endl;
 		}
 		return;
 	}
 
-	const auto name = validated_pre.get(name_id);
+	const auto name = parsed_and_validated_pre.get(name_id);
 	CHECK_THAT(*name, Equals("7TODO"));
 }
 
