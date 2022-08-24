@@ -28,28 +28,10 @@
 namespace env {
 
 class prefix;
+template <typename Prefix>
+class parsed_and_validated_prefix;
 
 namespace detail {
-
-template <typename T, bool IsRequired>
-class variable_id {
-  public:
-	variable_id() = delete;
-	variable_id(const variable_id&) = delete;
-	variable_id(variable_id&&) = default;
-
-	variable_id& operator=(const variable_id&) = delete;
-	variable_id& operator=(variable_id&&) = default;
-
-  private:
-	variable_id(const std::size_t idx) : m_idx(idx) {}
-
-	const std::size_t m_idx;
-
-	friend prefix;
-	template <typename Prefix>
-	friend class parsed_and_validated_prefix;
-};
 
 class variable_data {
   public:
@@ -74,65 +56,7 @@ class variable_data {
 
 	friend prefix;
 	template <typename Prefix>
-	friend class parsed_and_validated_prefix;
-};
-
-// Templated to resolve mutual dependency.
-template <typename Prefix>
-class parsed_and_validated_prefix {
-  public:
-	parsed_and_validated_prefix() = delete;
-
-	parsed_and_validated_prefix(const parsed_and_validated_prefix&) = delete;
-	parsed_and_validated_prefix(parsed_and_validated_prefix&&) = default;
-
-	parsed_and_validated_prefix& operator=(const parsed_and_validated_prefix&) = delete;
-	parsed_and_validated_prefix& operator=(parsed_and_validated_prefix&&) = default;
-
-	template <typename T, bool IsRequired>
-	[[nodiscard]] auto get(const detail::variable_id<T, IsRequired>& var_id)
-	{
-		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
-		if constexpr (IsRequired) {
-			return std::any_cast<T>(value);
-		} else {
-			return value.has_value() ? std::optional<T>{std::any_cast<T>(value)} : std::optional<T>{std::nullopt};
-		}
-	}
-
-	template <typename T, bool IsRequired>
-	[[nodiscard]] T get_or(const detail::variable_id<T, IsRequired>& var_id, const T default_value)
-	{
-		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
-		return value.has_value() ? std::any_cast<T>(value) : default_value;
-	}
-
-	[[nodiscard]] bool ok() const noexcept { return m_errors.empty() && m_warnings.empty(); }
-	[[nodiscard]] std::string error_message() const { return {}; }
-	[[nodiscard]] std::string warning_message() const { return {}; }
-
-	[[nodiscard]] const std::vector<parser_error>& errors() const { return m_errors; }
-	[[nodiscard]] const std::vector<unrecognized_option>& warnings() const { return m_warnings; }
-
-  private:
-	parsed_and_validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
-	{
-		for (auto& var : m_prefix.m_registered_vars) {
-			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
-			const auto env_var_value = "7TODO";
-			try {
-				var.m_value = var.m_parser_and_validator(env_var_value);
-			} catch (const std::exception& e) {
-				m_errors.emplace_back(fmt::format("Variable '{}' with error '{}'", env_var_name, e.what()));
-			}
-		}
-	}
-
-	Prefix m_prefix;
-	std::vector<parser_error> m_errors;
-	std::vector<unrecognized_option> m_warnings;
-
-	friend prefix;
+	friend class ::env::parsed_and_validated_prefix;
 };
 
 } // namespace detail
@@ -171,6 +95,84 @@ struct default_parser_and_validator {
 template <typename Validator>
 default_parser(Validator) -> default_parser<
     std::remove_cv_t<std::remove_reference_t<typename detail::util::callable_traits<Validator>::arg0_type>>>;
+
+template <typename T, bool IsRequired>
+class variable_id {
+  public:
+	variable_id() = delete;
+	variable_id(const variable_id&) = delete;
+	variable_id(variable_id&&) = default;
+
+	variable_id& operator=(const variable_id&) = delete;
+	variable_id& operator=(variable_id&&) = default;
+
+  private:
+	variable_id(const std::size_t idx) : m_idx(idx) {}
+
+	const std::size_t m_idx;
+
+	friend prefix;
+	template <typename Prefix>
+	friend class parsed_and_validated_prefix;
+};
+
+// Templated to resolve mutual dependency.
+template <typename Prefix>
+class parsed_and_validated_prefix {
+  public:
+	parsed_and_validated_prefix() = delete;
+
+	parsed_and_validated_prefix(const parsed_and_validated_prefix&) = delete;
+	parsed_and_validated_prefix(parsed_and_validated_prefix&&) = default;
+
+	parsed_and_validated_prefix& operator=(const parsed_and_validated_prefix&) = delete;
+	parsed_and_validated_prefix& operator=(parsed_and_validated_prefix&&) = default;
+
+	template <typename T, bool IsRequired>
+	[[nodiscard]] auto get(const variable_id<T, IsRequired>& var_id)
+	{
+		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
+		if constexpr (IsRequired) {
+			return std::any_cast<T>(value);
+		} else {
+			return value.has_value() ? std::optional<T>{std::any_cast<T>(value)} : std::optional<T>{std::nullopt};
+		}
+	}
+
+	template <typename T, bool IsRequired>
+	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, const T default_value)
+	{
+		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
+		return value.has_value() ? std::any_cast<T>(value) : default_value;
+	}
+
+	[[nodiscard]] bool ok() const noexcept { return m_errors.empty() && m_warnings.empty(); }
+	[[nodiscard]] std::string error_message() const { return {}; }
+	[[nodiscard]] std::string warning_message() const { return {}; }
+
+	[[nodiscard]] const std::vector<parser_error>& errors() const { return m_errors; }
+	[[nodiscard]] const std::vector<unrecognized_option>& warnings() const { return m_warnings; }
+
+  private:
+	parsed_and_validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
+	{
+		for (auto& var : m_prefix.m_registered_vars) {
+			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
+			const auto env_var_value = "7TODO";
+			try {
+				var.m_value = var.m_parser_and_validator(env_var_value);
+			} catch (const std::exception& e) {
+				m_errors.emplace_back(fmt::format("Variable '{}' with error '{}'", env_var_name, e.what()));
+			}
+		}
+	}
+
+	Prefix m_prefix;
+	std::vector<parser_error> m_errors;
+	std::vector<unrecognized_option> m_warnings;
+
+	friend prefix;
+};
 
 class prefix {
   public:
@@ -225,7 +227,7 @@ class prefix {
 		return registration_option_helper<T, true>(name, options);
 	}
 
-	[[nodiscard]] detail::parsed_and_validated_prefix<prefix> parse_and_validate() { return {std::move(*this)}; }
+	[[nodiscard]] parsed_and_validated_prefix<prefix> parse_and_validate() { return {std::move(*this)}; }
 
 	[[nodiscard]] std::string help_message() const { return {}; }
 
@@ -238,7 +240,7 @@ class prefix {
 			return parser_and_validator(env_value);
 		};
 		m_registered_vars.push_back(detail::variable_data{name, std::move(type_erased_parser_and_validator)});
-		return detail::variable_id<T, IsRequired>{m_registered_vars.size() - 1};
+		return variable_id<T, IsRequired>{m_registered_vars.size() - 1};
 	}
 
 	template <typename T, bool IsRequired>
@@ -275,7 +277,7 @@ class prefix {
 	std::vector<detail::variable_data> m_registered_vars;
 
 	template <typename Prefix>
-	friend class detail::parsed_and_validated_prefix;
+	friend class parsed_and_validated_prefix;
 };
 
 } // namespace env
