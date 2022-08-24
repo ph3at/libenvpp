@@ -42,16 +42,10 @@ enum class testing_option {
 };
 
 template <>
-class default_parser<testing_option> {
-  public:
-	template <typename Validator>
-	default_parser(Validator validator) : m_validator(std::move(validator))
-	{}
-
+struct default_parser<testing_option> {
 	[[nodiscard]] testing_option operator()(const std::string_view str) const
 	{
 		testing_option value;
-
 		if (str == "FIRST_OPTION") {
 			value = testing_option::FIRST_OPTION;
 		} else if (str == "SECOND_OPTION") {
@@ -61,13 +55,8 @@ class default_parser<testing_option> {
 		} else {
 			throw parser_error{fmt::format("Cannot construct testing_option from '{}'", str)};
 		}
-
-		m_validator(value);
 		return value;
 	}
-
-  private:
-	std::function<void(const testing_option&)> m_validator;
 };
 
 class option_var_fixture {

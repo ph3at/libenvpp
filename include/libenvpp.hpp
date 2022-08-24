@@ -53,7 +53,6 @@ class variable_data {
 
 	std::string m_name;
 	parser_and_validator_fn m_parser_and_validator;
-	std::string m_value_str;
 	std::any m_value;
 
 	friend prefix;
@@ -69,34 +68,19 @@ struct default_validator {
 };
 
 template <typename T>
-class default_parser {
-  public:
-	template <typename Validator>
-	default_parser(Validator validator) : m_validator(std::move(validator))
-	{}
-
-	[[nodiscard]] T operator()(const std::string_view str) const
-	{
-		T value = detail::construct_from_string<T>(str);
-		m_validator(value);
-		return value;
-	}
-
-  private:
-	std::function<void(const T&)> m_validator;
+struct default_parser {
+	[[nodiscard]] T operator()(const std::string_view str) const { return detail::construct_from_string<T>(str); }
 };
 
 template <typename T>
 struct default_parser_and_validator {
 	[[nodiscard]] T operator()(const std::string_view str) const
 	{
-		return default_parser<T>{default_validator<T>{}}(str);
+		const auto value = default_parser<T>{}(str);
+		default_validator<T>{}(value);
+		return value;
 	}
 };
-
-template <typename Validator>
-default_parser(Validator) -> default_parser<
-    std::remove_cv_t<std::remove_reference_t<typename detail::util::callable_traits<Validator>::arg0_type>>>;
 
 template <typename T, bool IsRequired>
 class variable_id {
@@ -165,7 +149,6 @@ class parsed_and_validated_prefix {
 				m_errors.emplace_back(fmt::format("Environment variable '{}' not set", env_var_name));
 			} else {
 				try {
-					var.m_value_str = *env_var_value;
 					var.m_value = var.m_parser_and_validator(*env_var_value);
 				} catch (const parser_error& e) {
 					m_errors.push_back(e);
@@ -263,13 +246,15 @@ class prefix {
 	template <typename T, bool IsRequired>
 	[[nodiscard]] auto registration_range_helper(const std::string_view name, const T min, const T max)
 	{
-		const auto validator = [min, max](const T& value) {
+		const auto parser_and_validator = [min, max](const std::string_view str) {
+			const auto value = default_parser<T>{}(str);
 			default_validator<T>{}(value);
 			if (value < min || value > max) {
 				throw range_error{fmt::format("Value {} outside of range [{}, {}]", value, min, max)};
 			}
+			return value;
 		};
-		return registration_helper<T, IsRequired>(name, default_parser{std::move(validator)});
+		return registration_helper<T, IsRequired>(name, std::move(parser_and_validator));
 	}
 
 	template <typename T, bool IsRequired>
@@ -279,16 +264,15 @@ class prefix {
 		if (options_set.size() != options.size()) {
 			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", name)};
 		}
-		const auto var_id = m_registered_vars.size();
-		const auto validator = [var_id, name = std::string(name), options = std::move(options_set)](const T& value) {
+		const auto parser_and_validator = [name = std::string(name),
+		                                   options = std::move(options_set)](const std::string_view str) {
+			const auto value = default_parser<T>{}(str);
 			default_validator<T>{}(value);
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
-				// T might not be printable (e.g. enum type), so use string representation instead.
-				const auto& value_str = m_registered_vars[var_id].m_value_str;
-				throw unrecognized_option{fmt::format("Unrecognized option '{}' for '{}'", value_str, name)};
+				throw unrecognized_option{fmt::format("Unrecognized option '{}' for '{}'", str, name)};
 			}
 		};
-		return registration_helper<T, IsRequired>(name, default_parser{std::move(validator)});
+		return registration_helper<T, IsRequired>(name, std::move(parser_and_validator));
 	}
 
 	std::string m_prefix_name;
