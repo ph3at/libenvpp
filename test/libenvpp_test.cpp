@@ -123,8 +123,8 @@ TEST_CASE("Retrieving errors", "[libenvpp]")
 
 	SECTION("Formatted error message")
 	{
-		CHECK_THAT(parsed_pre.error_message(),
-		           ContainsSubstring(prefix_name) && ContainsSubstring(foo_name) && ContainsSubstring("not set"));
+		CHECK_THAT(parsed_pre.error_message(), ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		                                           && ContainsSubstring(foo_name) && ContainsSubstring("not set"));
 	}
 
 	SECTION("Relating error to ID")

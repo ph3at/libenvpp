@@ -140,30 +140,8 @@ class parsed_and_validated_prefix {
 	}
 
 	[[nodiscard]] bool ok() const noexcept { return m_errors.empty() && m_warnings.empty(); }
-	[[nodiscard]] std::string error_message() const
-	{
-		if (m_errors.empty()) {
-			return fmt::format("No errors for prefix '{}'", m_prefix.m_prefix_name);
-		}
-		auto err_msg = fmt::format("The following {} error(s) occurred when parsing and validating prefix '{}':\n",
-		                           m_errors.size(), m_prefix.m_prefix_name);
-		for (std::size_t i = 0; i < m_errors.size(); ++i) {
-			err_msg += fmt::format("\t{}{}", m_errors[i].what(), i + 1 < m_errors.size() ? "\n" : "");
-		}
-		return err_msg;
-	}
-	[[nodiscard]] std::string warning_message() const
-	{
-		if (m_warnings.empty()) {
-			return fmt::format("No warnings for prefix '{}'", m_prefix.m_prefix_name);
-		}
-		auto wrn_msg = fmt::format("The following {} warning(s) occurred when parsing and validating prefix '{}':\n",
-		                           m_warnings.size(), m_prefix.m_prefix_name);
-		for (std::size_t i = 0; i < m_warnings.size(); ++i) {
-			wrn_msg += fmt::format("\t{}{}", m_warnings[i].what(), i + 1 < m_warnings.size() ? "\n" : "");
-		}
-		return wrn_msg;
-	}
+	[[nodiscard]] std::string error_message() const { return message_formatting_helper("error", m_errors); }
+	[[nodiscard]] std::string warning_message() const { return message_formatting_helper("warning", m_warnings); }
 
 	[[nodiscard]] const std::vector<error>& errors() const { return m_errors; }
 	[[nodiscard]] const std::vector<error>& warnings() const { return m_warnings; }
@@ -206,6 +184,20 @@ class parsed_and_validated_prefix {
 				}
 			}
 		}
+	}
+
+	[[nodiscard]] std::string message_formatting_helper(const std::string_view message_type,
+	                                                    const std::vector<error>& errors_or_warnings) const
+	{
+		if (errors_or_warnings.empty()) {
+			return fmt::format("No {}s for prefix '{}'", message_type, m_prefix.m_prefix_name);
+		}
+		auto msg = fmt::format("The following {} {}(s) occurred when parsing and validating prefix '{}':\n",
+		                       errors_or_warnings.size(), message_type, m_prefix.m_prefix_name);
+		for (std::size_t i = 0; i < errors_or_warnings.size(); ++i) {
+			msg += fmt::format("\t{}{}", errors_or_warnings[i].what(), i + 1 < errors_or_warnings.size() ? "\n" : "");
+		}
+		return msg;
 	}
 
 	Prefix m_prefix;
