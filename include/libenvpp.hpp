@@ -150,25 +150,27 @@ class parsed_and_validated_prefix {
 	{
 		for (std::size_t id = 0; id < m_prefix.m_registered_vars.size(); ++id) {
 			auto& var = m_prefix.m_registered_vars[id];
-			const auto env_var_name = m_prefix.m_prefix_name + "_" + var.m_name;
-			const auto env_var_value = detail::get_environment_variable(env_var_name);
-			if (!env_var_value.has_value()) {
-				m_errors.emplace_back(id, fmt::format("Environment variable '{}' not set", env_var_name));
+			const auto var_name = m_prefix.m_prefix_name + "_" + var.m_name;
+			const auto var_value = detail::get_environment_variable(var_name);
+			if (!var_value.has_value()) {
+				m_errors.emplace_back(id, var.m_name, fmt::format("Environment variable '{}' not set", var_name));
 			} else {
 				try {
-					var.m_value = var.m_parser_and_validator(*env_var_value);
+					var.m_value = var.m_parser_and_validator(*var_value);
 				} catch (const parser_error& e) {
-					m_errors.emplace_back(id, fmt::format("Parser error: ", e.what()));
+					m_errors.emplace_back(id, var.m_name, fmt::format("Parser error: ", e.what()));
 				} catch (const range_error& e) {
-					m_errors.emplace_back(id, fmt::format("Range error: ", e.what()));
+					m_errors.emplace_back(id, var.m_name, fmt::format("Range error: ", e.what()));
 				} catch (const std::exception& e) {
 					m_errors.emplace_back(
-					    id, fmt::format("Failed to parse or validate environment variable '{}' with error '{}'",
-					                    env_var_name, e.what()));
+					    id, var.m_name,
+					    fmt::format("Failed to parse or validate environment variable '{}' with error '{}'", var_name,
+					                e.what()));
 				} catch (...) {
 					m_errors.emplace_back(
-					    id, fmt::format("Failed to parse or validate environment variable '{}' with unknown error",
-					                    env_var_name));
+					    id, var.m_name,
+					    fmt::format("Failed to parse or validate environment variable '{}' with unknown error",
+					                var_name));
 				}
 			}
 		}

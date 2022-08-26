@@ -34,8 +34,8 @@ class unrecognized_option : public std::runtime_error {
 class error {
   public:
 	error() = delete;
-	error(const std::size_t var_idx, const std::string_view error_message)
-	    : m_var_idx(var_idx), m_error_message(error_message)
+	error(const std::size_t var_idx, const std::string_view var_name, const std::string_view error_message)
+	    : m_var_idx(var_idx), m_var_name(var_name), m_error_message(error_message)
 	{}
 
 	error(const error&) = delete;
@@ -46,10 +46,13 @@ class error {
 
 	[[nodiscard]] std::size_t get_id() const noexcept { return m_var_idx; }
 
+	[[nodiscard]] const std::string& get_name() const noexcept { return m_var_name; }
+
 	[[nodiscard]] const std::string& what() const noexcept { return m_error_message; }
 
   private:
 	std::size_t m_var_idx;
+	std::string m_var_name;
 	std::string m_error_message;
 };
 
