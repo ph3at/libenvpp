@@ -9,6 +9,7 @@
 
 namespace env {
 
+using Catch::Matchers::ContainsSubstring;
 using Catch::Matchers::Equals;
 
 class int_var_fixture {
@@ -113,11 +114,18 @@ TEST_CASE_METHOD(option_var_fixture, "Retrieving option environment variable", "
 
 TEST_CASE("Retrieving errors", "[libenvpp]")
 {
-	auto pre = env::prefix("PREFIX");
+	const auto prefix_name = "PREFIX";
+	auto pre = env::prefix(prefix_name);
 	const auto foo_name = "FOO";
-	const auto foo_id = pre.register_variable<int>(foo_name);
+	const auto foo_id = pre.register_required_variable<int>(foo_name);
 	auto parsed_pre = pre.parse_and_validate();
 	REQUIRE_FALSE(parsed_pre.ok());
+
+	SECTION("Formatted error message")
+	{
+		CHECK_THAT(parsed_pre.error_message(),
+		           ContainsSubstring(prefix_name) && ContainsSubstring(foo_name) && ContainsSubstring("not set"));
+	}
 
 	SECTION("Relating error to ID")
 	{

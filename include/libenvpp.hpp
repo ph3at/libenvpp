@@ -47,11 +47,12 @@ class variable_data {
 	variable_data& operator=(variable_data&&) = default;
 
   private:
-	variable_data(const std::string_view name, parser_and_validator_fn parser_and_validator)
-	    : m_name(name), m_parser_and_validator(std::move(parser_and_validator))
+	variable_data(const std::string_view name, bool is_required, parser_and_validator_fn parser_and_validator)
+	    : m_name(name), m_is_required(is_required), m_parser_and_validator(std::move(parser_and_validator))
 	{}
 
 	std::string m_name;
+	bool m_is_required;
 	parser_and_validator_fn m_parser_and_validator;
 	std::any m_value;
 
@@ -139,8 +140,30 @@ class parsed_and_validated_prefix {
 	}
 
 	[[nodiscard]] bool ok() const noexcept { return m_errors.empty() && m_warnings.empty(); }
-	[[nodiscard]] std::string error_message() const { return {}; }
-	[[nodiscard]] std::string warning_message() const { return {}; }
+	[[nodiscard]] std::string error_message() const
+	{
+		if (m_errors.empty()) {
+			return fmt::format("No errors for prefix '{}'", m_prefix.m_prefix_name);
+		}
+		auto err_msg = fmt::format("The following {} error(s) occurred when parsing and validating prefix '{}':\n",
+		                           m_errors.size(), m_prefix.m_prefix_name);
+		for (std::size_t i = 0; i < m_errors.size(); ++i) {
+			err_msg += fmt::format("\t{}{}", m_errors[i].what(), i + 1 < m_errors.size() ? "\n" : "");
+		}
+		return err_msg;
+	}
+	[[nodiscard]] std::string warning_message() const
+	{
+		if (m_warnings.empty()) {
+			return fmt::format("No warnings for prefix '{}'", m_prefix.m_prefix_name);
+		}
+		auto wrn_msg = fmt::format("The following {} warning(s) occurred when parsing and validating prefix '{}':\n",
+		                           m_warnings.size(), m_prefix.m_prefix_name);
+		for (std::size_t i = 0; i < m_warnings.size(); ++i) {
+			wrn_msg += fmt::format("\t{}{}", m_warnings[i].what(), i + 1 < m_warnings.size() ? "\n" : "");
+		}
+		return wrn_msg;
+	}
 
 	[[nodiscard]] const std::vector<error>& errors() const { return m_errors; }
 	[[nodiscard]] const std::vector<error>& warnings() const { return m_warnings; }
@@ -153,24 +176,33 @@ class parsed_and_validated_prefix {
 			const auto var_name = m_prefix.m_prefix_name + "_" + var.m_name;
 			const auto var_value = detail::get_environment_variable(var_name);
 			if (!var_value.has_value()) {
-				m_errors.emplace_back(id, var.m_name, fmt::format("Environment variable '{}' not set", var_name));
+				if (var.m_is_required) {
+					m_errors.emplace_back(id, var.m_name, fmt::format("Environment variable '{}' not set", var.m_name));
+				} else {
+					m_warnings.emplace_back(id, var.m_name,
+					                        fmt::format("Environment variable '{}' not set", var.m_name));
+				}
 			} else {
 				try {
 					var.m_value = var.m_parser_and_validator(*var_value);
 				} catch (const parser_error& e) {
-					m_errors.emplace_back(id, var.m_name, fmt::format("Parser error: ", e.what()));
+					m_errors.emplace_back(
+					    id, var.m_name,
+					    fmt::format("Parser error for environment variable '{}': ", var.m_name, e.what()));
 				} catch (const range_error& e) {
-					m_errors.emplace_back(id, var.m_name, fmt::format("Range error: ", e.what()));
+					m_errors.emplace_back(
+					    id, var.m_name,
+					    fmt::format("Range error for environment variable '{}': ", var.m_name, e.what()));
 				} catch (const std::exception& e) {
 					m_errors.emplace_back(
 					    id, var.m_name,
-					    fmt::format("Failed to parse or validate environment variable '{}' with error '{}'", var_name,
+					    fmt::format("Failed to parse or validate environment variable '{}' with: '{}'", var.m_name,
 					                e.what()));
 				} catch (...) {
 					m_errors.emplace_back(
 					    id, var.m_name,
 					    fmt::format("Failed to parse or validate environment variable '{}' with unknown error",
-					                var_name));
+					                var.m_name));
 				}
 			}
 		}
@@ -248,7 +280,8 @@ class prefix {
 		    [parser_and_validator](const std::string_view env_value) -> std::any {
 			return parser_and_validator(env_value);
 		};
-		m_registered_vars.push_back(detail::variable_data{name, std::move(type_erased_parser_and_validator)});
+		m_registered_vars.push_back(
+		    detail::variable_data{name, IsRequired, std::move(type_erased_parser_and_validator)});
 		return variable_id<T, IsRequired>{m_registered_vars.size() - 1};
 	}
 
