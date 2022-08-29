@@ -192,6 +192,7 @@ class parsed_and_validated_prefix {
 			auto msg = std::string();
 			if (similar_var.has_value()) {
 				msg += fmt::format("Unused environment variable '{}' set, did you mean '{}'?", var_name, *similar_var);
+				pop_from_environment(*similar_var, environment);
 			} else {
 				msg += fmt::format("Environment variable '{}' not set", var.m_name);
 			}
@@ -200,6 +201,13 @@ class parsed_and_validated_prefix {
 			} else {
 				m_warnings.emplace_back(id, var.m_name, msg);
 			}
+		}
+
+		const auto unused_variables = find_unused_env_vars(environment);
+
+		for (const auto& unused_var : unused_variables) {
+			m_warnings.emplace_back(-1, "",
+			                        fmt::format("Prefix environment variable '{}' specified but unused", unused_var));
 		}
 	}
 
@@ -217,9 +225,8 @@ class parsed_and_validated_prefix {
 		return msg;
 	}
 
-	[[nodiscard]] std::optional<std::string>
-	pop_from_environment(const std::string_view env_var,
-	                     std::unordered_map<std::string, std::string>& environment) const
+	std::optional<std::string> pop_from_environment(const std::string_view env_var,
+	                                                std::unordered_map<std::string, std::string>& environment) const
 	{
 		const auto var_it = environment.find(std::string(env_var));
 		if (var_it == environment.end()) {
@@ -258,6 +265,18 @@ class parsed_and_validated_prefix {
 		}
 
 		return std::nullopt;
+	}
+
+	[[nodiscard]] std::vector<std::string>
+	find_unused_env_vars(const std::unordered_map<std::string, std::string>& environment) const
+	{
+		auto unused_env_vars = std::vector<std::string>{};
+		for (const auto& [var, _] : environment) {
+			if (var.find(m_prefix.m_prefix_name) != m_prefix.m_prefix_name.npos) {
+				unused_env_vars.push_back(var);
+			}
+		}
+		return unused_env_vars;
 	}
 
 	Prefix m_prefix;

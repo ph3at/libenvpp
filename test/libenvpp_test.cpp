@@ -158,4 +158,15 @@ TEST_CASE_METHOD(int_var_fixture, "Typo detection using edit distance", "[libenv
 	           ContainsSubstring("INT") && ContainsSubstring("did you mean") && ContainsSubstring("HINT"));
 }
 
+TEST_CASE("Unused variable with same prefix", "[libenvpp]")
+{
+	const auto scoped_env_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "FOO"};
+
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	REQUIRE_FALSE(parsed_and_validated_pre.ok());
+
+	CHECK_THAT(parsed_and_validated_pre.warning_message(), ContainsSubstring("LIBENVPP_TESTING_FOO"));
+}
+
 } // namespace env
