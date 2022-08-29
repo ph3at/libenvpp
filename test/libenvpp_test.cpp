@@ -147,4 +147,15 @@ TEST_CASE("Retrieving errors", "[libenvpp]")
 	}
 }
 
+TEST_CASE_METHOD(int_var_fixture, "Typo detection using edit distance", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	[[maybe_unused]] const auto int_id = pre.register_required_variable<int>("HINT");
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	REQUIRE_FALSE(parsed_and_validated_pre.ok());
+
+	CHECK_THAT(parsed_and_validated_pre.error_message(),
+	           ContainsSubstring("INT") && ContainsSubstring("did you mean") && ContainsSubstring("HINT"));
+}
+
 } // namespace env

@@ -21,6 +21,7 @@
 
 #include <fmt/core.h>
 
+#include <levenshtein.hpp>
 #include <libenvpp_env.hpp>
 #include <libenvpp_errors.hpp>
 #include <libenvpp_parser.hpp>
@@ -149,17 +150,16 @@ class parsed_and_validated_prefix {
   private:
 	parsed_and_validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
 	{
+		auto environment = detail::get_environment();
+
+		auto unparsed_env_vars = std::vector<std::size_t>{};
+
 		for (std::size_t id = 0; id < m_prefix.m_registered_vars.size(); ++id) {
 			auto& var = m_prefix.m_registered_vars[id];
-			const auto var_name = m_prefix.m_prefix_name + "_" + var.m_name;
-			const auto var_value = detail::get_environment_variable(var_name);
+			const auto var_name = get_full_env_var_name(id);
+			const auto var_value = pop_from_environment(var_name, environment);
 			if (!var_value.has_value()) {
-				if (var.m_is_required) {
-					m_errors.emplace_back(id, var.m_name, fmt::format("Environment variable '{}' not set", var.m_name));
-				} else {
-					m_warnings.emplace_back(id, var.m_name,
-					                        fmt::format("Environment variable '{}' not set", var.m_name));
-				}
+				unparsed_env_vars.push_back(id);
 			} else {
 				try {
 					var.m_value = var.m_parser_and_validator(*var_value);
@@ -184,6 +184,23 @@ class parsed_and_validated_prefix {
 				}
 			}
 		}
+
+		for (const auto id : unparsed_env_vars) {
+			auto& var = m_prefix.m_registered_vars[id];
+			const auto var_name = get_full_env_var_name(id);
+			const auto similar_var = find_similar_env_var(var_name, environment);
+			auto msg = std::string();
+			if (similar_var.has_value()) {
+				msg += fmt::format("Unused environment variable '{}' set, did you mean '{}'?", var_name, *similar_var);
+			} else {
+				msg += fmt::format("Environment variable '{}' not set", var.m_name);
+			}
+			if (var.m_is_required) {
+				m_errors.emplace_back(id, var.m_name, msg);
+			} else {
+				m_warnings.emplace_back(id, var.m_name, msg);
+			}
+		}
 	}
 
 	[[nodiscard]] std::string message_formatting_helper(const std::string_view message_type,
@@ -200,6 +217,49 @@ class parsed_and_validated_prefix {
 		return msg;
 	}
 
+	[[nodiscard]] std::optional<std::string>
+	pop_from_environment(const std::string_view env_var,
+	                     std::unordered_map<std::string, std::string>& environment) const
+	{
+		const auto var_it = environment.find(std::string(env_var));
+		if (var_it == environment.end()) {
+			return std::nullopt;
+		}
+		const auto [_, val] = *var_it;
+		environment.erase(var_it);
+		return val;
+	}
+
+	[[nodiscard]] std::string get_full_env_var_name(const std::size_t var_id) const
+	{
+		return m_prefix.m_prefix_name + "_" + m_prefix.m_registered_vars[var_id].m_name;
+	}
+
+	[[nodiscard]] std::optional<std::string>
+	find_similar_env_var(const std::string_view var_name,
+	                     const std::unordered_map<std::string, std::string>& environment) const
+	{
+		if (environment.empty()) {
+			return std::nullopt;
+		}
+
+		auto edit_distances = std::vector<std::pair<int, std::string>>{};
+		std::transform(environment.begin(), environment.end(), std::back_inserter(edit_distances),
+		               [this, &var_name](const auto& entry) {
+			               return std::pair{
+			                   levenshtein::distance(var_name, entry.first, m_prefix.m_edit_distance_cutoff + 1),
+			                   entry.first};
+		               });
+		std::sort(edit_distances.begin(), edit_distances.end(),
+		          [](const auto& a, const auto& b) { return a.first < b.first; });
+		const auto& [edit_distance, var] = edit_distances.front();
+		if (edit_distance <= m_prefix.m_edit_distance_cutoff) {
+			return var;
+		}
+
+		return std::nullopt;
+	}
+
 	Prefix m_prefix;
 	std::vector<error> m_errors;
 	std::vector<error> m_warnings;
@@ -210,7 +270,7 @@ class parsed_and_validated_prefix {
 class prefix {
   public:
 	prefix() = delete;
-	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 2)
+	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 3)
 	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
 	{}
 	prefix(const prefix&) = delete;
