@@ -158,6 +158,10 @@ class parsed_and_validated_prefix {
 			auto& var = m_prefix.m_registered_vars[id];
 			const auto var_name = get_full_env_var_name(id);
 			const auto var_value = pop_from_environment(var_name, environment);
+			if (var.m_value.has_value()) {
+				// Skip variables set for testing, but consume their environment value if available.
+				continue;
+			}
 			if (!var_value.has_value()) {
 				unparsed_env_vars.push_back(id);
 			} else {
@@ -339,7 +343,11 @@ class prefix {
 		return registration_option_helper<T, true>(name, options);
 	}
 
-	[[nodiscard]] parsed_and_validated_prefix<prefix> parse_and_validate() { return {std::move(*this)}; }
+	template <typename T, bool IsRequired>
+	void set_for_testing(const variable_id<T, IsRequired>& var_id, const T& value)
+	{
+		m_registered_vars[var_id.m_idx].m_value = value;
+	}
 
 	[[nodiscard]] parsed_and_validated_prefix<prefix>
 	    parse_and_validate(/*TODO: Implement optional custom environment*/)

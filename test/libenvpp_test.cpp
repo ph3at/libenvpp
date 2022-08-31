@@ -169,4 +169,20 @@ TEST_CASE("Unused variable with same prefix", "[libenvpp]")
 	CHECK_THAT(parsed_and_validated_pre.warning_message(), ContainsSubstring("LIBENVPP_TESTING_FOO"));
 }
 
+TEST_CASE("Set for testing", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto int_id = pre.register_variable<int>("INT");
+	const auto float_id = pre.register_required_variable<float>("FLOAT");
+	pre.set_for_testing(int_id, 42);
+	pre.set_for_testing(float_id, 3.1415f);
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	REQUIRE(parsed_and_validated_pre.ok());
+	const auto int_val = parsed_and_validated_pre.get(int_id);
+	REQUIRE(int_val.has_value());
+	CHECK(*int_val == 42);
+	const auto float_val = parsed_and_validated_pre.get(float_id);
+	CHECK(float_val == 3.1415f);
+}
+
 } // namespace env
