@@ -341,7 +341,17 @@ class prefix {
 
 	[[nodiscard]] parsed_and_validated_prefix<prefix> parse_and_validate() { return {std::move(*this)}; }
 
-	[[nodiscard]] std::string help_message() const { return {}; }
+	[[nodiscard]] parsed_and_validated_prefix<prefix>
+	    parse_and_validate(/*TODO: Implement optional custom environment*/)
+	{
+		return {std::move(*this)};
+	}
+
+	[[nodiscard]] std::string help_message() const
+	{
+		// TODO: Implement
+		return {};
+	}
 
   private:
 	template <typename T, bool IsRequired, typename ParserAndValidatorFn>
