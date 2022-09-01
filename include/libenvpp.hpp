@@ -148,10 +148,9 @@ class parsed_and_validated_prefix {
 	[[nodiscard]] const std::vector<error>& warnings() const { return m_warnings; }
 
   private:
-	parsed_and_validated_prefix(Prefix&& pre) : m_prefix(std::move(pre))
+	parsed_and_validated_prefix(Prefix&& pre, std::unordered_map<std::string, std::string> environment)
+	    : m_prefix(std::move(pre))
 	{
-		auto environment = detail::get_environment();
-
 		auto unparsed_env_vars = std::vector<std::size_t>{};
 
 		for (std::size_t id = 0; id < m_prefix.m_registered_vars.size(); ++id) {
@@ -350,9 +349,9 @@ class prefix {
 	}
 
 	[[nodiscard]] parsed_and_validated_prefix<prefix>
-	    parse_and_validate(/*TODO: Implement optional custom environment*/)
+	parse_and_validate(std::unordered_map<std::string, std::string> environment = detail::get_environment())
 	{
-		return {std::move(*this)};
+		return {std::move(*this), std::move(environment)};
 	}
 
 	[[nodiscard]] std::string help_message() const
