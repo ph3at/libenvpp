@@ -14,24 +14,31 @@
 
 namespace env::detail {
 
-static inline std::string convert_string(const std::wstring& str)
+std::optional<std::string> convert_string(const std::wstring& str)
 {
-	const auto* src = str.c_str();
-	auto mbstate = std::mbstate_t{};
-	const auto len = std::wcsrtombs(nullptr, &src, 0, &mbstate);
-	auto dst = std::string(len, '\0'); // Implicitly contains space for the null terminator
-	std::wcsrtombs(dst.data(), &src, dst.size(), &mbstate);
-	return dst;
+	const auto buffer_size =
+	    WideCharToMultiByte(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), nullptr, 0, nullptr, nullptr);
+	if (buffer_size == 0) {
+		return {};
+	}
+	auto buffer = std::string(buffer_size, '\0');
+	[[maybe_unused]] const auto res = WideCharToMultiByte(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()),
+	                                                      buffer.data(), buffer_size, nullptr, nullptr);
+	LIBENVPP_CHECK(res == buffer_size);
+	return buffer;
 }
 
-static inline std::wstring convert_string(const std::string& str)
+std::optional<std::wstring> convert_string(const std::string& str)
 {
-	const auto* src = str.c_str();
-	auto mbstate = std::mbstate_t{};
-	const auto len = std::mbsrtowcs(nullptr, &src, 0, &mbstate);
-	auto dst = std::wstring(len, L'\0'); // Implicitly contains space for the null terminator
-	std::mbsrtowcs(dst.data(), &src, dst.size(), &mbstate);
-	return dst;
+	const auto buffer_size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), nullptr, 0);
+	if (buffer_size == 0) {
+		return {};
+	}
+	auto buffer = std::wstring(buffer_size, L'\0');
+	[[maybe_unused]] const auto res =
+	    MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), buffer.data(), buffer_size);
+	LIBENVPP_CHECK(res == buffer_size);
+	return buffer;
 }
 
 [[nodiscard]] std::unordered_map<std::string, std::string> get_environment()
@@ -54,7 +61,7 @@ static inline std::wstring convert_string(const std::string& str)
 			}
 		}
 		if (!var_name_value[0].empty()) {
-			env_map[convert_string(var_name_value[0])] = convert_string(var_name_value[1]);
+			env_map[*convert_string(var_name_value[0])] = *convert_string(var_name_value[1]);
 		}
 	}
 
@@ -67,28 +74,28 @@ static inline std::wstring convert_string(const std::string& str)
 [[nodiscard]] std::optional<std::string> get_environment_variable(const std::string_view name)
 {
 	const auto var_name = convert_string(std::string(name));
-	const auto buffer_size = GetEnvironmentVariableW(var_name.c_str(), nullptr, 0);
+	const auto buffer_size = GetEnvironmentVariableW(var_name->c_str(), nullptr, 0);
 	if (buffer_size == 0) {
 		return {};
 	}
 	// -1 because std::string already contains implicit null terminator
 	auto value = std::wstring(buffer_size - 1, L'\0');
-	const auto env_var_got = GetEnvironmentVariableW(var_name.c_str(), value.data(), buffer_size);
+	const auto env_var_got = GetEnvironmentVariableW(var_name->c_str(), value.data(), buffer_size);
 	LIBENVPP_CHECK(env_var_got != 0);
 	return convert_string(value);
 }
 
 void set_environment_variable(const std::string_view name, const std::string_view value)
 {
-	[[maybe_unused]] const auto env_var_was_set =
-	    SetEnvironmentVariableW(convert_string(std::string(name)).c_str(), convert_string(std::string(value)).c_str());
+	[[maybe_unused]] const auto env_var_was_set = SetEnvironmentVariableW(convert_string(std::string(name))->c_str(),
+	                                                                      convert_string(std::string(value))->c_str());
 	LIBENVPP_CHECK(env_var_was_set);
 }
 
 void delete_environment_variable(const std::string_view name)
 {
 	[[maybe_unused]] const auto env_var_was_deleted =
-	    SetEnvironmentVariableW(convert_string(std::string(name)).c_str(), nullptr);
+	    SetEnvironmentVariableW(convert_string(std::string(name))->c_str(), nullptr);
 	LIBENVPP_CHECK(env_var_was_deleted);
 }
 

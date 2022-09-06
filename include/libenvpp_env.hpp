@@ -7,6 +7,13 @@
 
 namespace env::detail {
 
+#if LIBENVPP_PLATFORM_WINDOWS
+
+std::optional<std::string> convert_string(const std::wstring& str);
+std::optional<std::wstring> convert_string(const std::string& str);
+
+#endif
+
 [[nodiscard]] std::unordered_map<std::string, std::string> get_environment();
 
 [[nodiscard]] std::optional<std::string> get_environment_variable(const std::string_view name);
