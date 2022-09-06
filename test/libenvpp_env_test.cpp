@@ -6,6 +6,91 @@
 namespace env::detail {
 
 using Catch::Matchers::Equals;
+using Catch::Matchers::StartsWith;
+
+#if LIBENVPP_PLATFORM_WINDOWS
+
+TEST_CASE("Converting wide-char to multi-byte", "[libenvpp_env]")
+{
+	SECTION("Valid input")
+	{
+		constexpr auto input = L"foo 🍌 bar";
+		constexpr auto output = "foo 🍌 bar";
+
+		const auto wide_char_str = std::wstring(input);
+		const auto multi_byte_str = convert_string(wide_char_str);
+		REQUIRE(multi_byte_str.has_value());
+		CHECK_THAT(*multi_byte_str, Equals(output));
+	}
+
+	SECTION("Invalid input parsed at least up to invalid character")
+	{
+		constexpr auto input = L"foo \xd800 bar";
+
+		const auto wide_char_str = std::wstring(input);
+		const auto multi_byte_str = convert_string(wide_char_str);
+		REQUIRE(multi_byte_str.has_value());
+		CHECK_THAT(*multi_byte_str, StartsWith("foo "));
+	}
+
+	SECTION("Invalid input replaced with unicode replacement character")
+	{
+		constexpr auto input = L"foo \xd800 bar";
+		constexpr auto output = "foo � bar";
+
+		const auto wide_char_str = std::wstring(input);
+		const auto multi_byte_str = convert_string(wide_char_str);
+		REQUIRE(multi_byte_str.has_value());
+		CHECK_THAT(*multi_byte_str, Equals(output));
+	}
+}
+
+TEST_CASE("Converting multi-byte to wide-char", "[libenvpp_env]")
+{
+	SECTION("Valid input")
+	{
+		constexpr auto input = "foo 🍌 bar";
+		constexpr auto output = L"foo 🍌 bar";
+
+		const auto multi_byte_str = std::string(input);
+		const auto wide_char_str = convert_string(multi_byte_str);
+		REQUIRE(wide_char_str.has_value());
+		CHECK(*wide_char_str == output); // Catch2 does not have matcher support for wide-chars
+	}
+
+	SECTION("Invalid input parsed at least up to invalid character")
+	{
+		constexpr auto input = "foo \x80 bar";
+
+		const auto multi_byte_str = std::string(input);
+		const auto wide_char_str = convert_string(multi_byte_str);
+		REQUIRE(wide_char_str.has_value());
+		CHECK(wide_char_str->find(L"foo ") == 0); // Catch2 does not have matcher support for wide-chars
+	}
+
+	SECTION("Invalid input parsed at least up to invalid character")
+	{
+		constexpr auto input = "foo \x80 bar";
+
+		const auto multi_byte_str = std::string(input);
+		const auto wide_char_str = convert_string(multi_byte_str);
+		REQUIRE(wide_char_str.has_value());
+		CHECK(wide_char_str->find(L"foo ") == 0); // Catch2 does not have matcher support for wide-chars
+	}
+
+	SECTION("Invalid input replaced with unicode replacement character")
+	{
+		constexpr auto input = "foo \x80 bar";
+		constexpr auto output = L"foo � bar";
+
+		const auto multi_byte_str = std::string(input);
+		const auto wide_char_str = convert_string(multi_byte_str);
+		REQUIRE(wide_char_str.has_value());
+		CHECK(*wide_char_str == output); // Catch2 does not have matcher support for wide-chars
+	}
+}
+
+#endif
 
 TEST_CASE("Deleting environment variables", "[libenvpp_env]")
 {
