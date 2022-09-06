@@ -194,7 +194,8 @@ class parsed_and_validated_prefix {
 			const auto similar_var = find_similar_env_var(var_name, environment);
 			auto msg = std::string();
 			if (similar_var.has_value()) {
-				msg += fmt::format("Unused environment variable '{}' set, did you mean '{}'?", var_name, *similar_var);
+				msg += fmt::format("Unrecognized environment variable '{}' set, did you mean '{}'?", *similar_var,
+				                   var_name);
 				pop_from_environment(*similar_var, environment);
 			} else {
 				msg += fmt::format("Environment variable '{}' not set", var.m_name);

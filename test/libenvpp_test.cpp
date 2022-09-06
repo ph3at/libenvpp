@@ -155,7 +155,8 @@ TEST_CASE_METHOD(int_var_fixture, "Typo detection using edit distance", "[libenv
 	REQUIRE_FALSE(parsed_and_validated_pre.ok());
 
 	CHECK_THAT(parsed_and_validated_pre.error_message(),
-	           ContainsSubstring("INT") && ContainsSubstring("did you mean") && ContainsSubstring("HINT"));
+	           ContainsSubstring("'LIBENVPP_TESTING_INT' set")
+	               && ContainsSubstring("did you mean 'LIBENVPP_TESTING_HINT'"));
 }
 
 TEST_CASE("Unused variable with same prefix", "[libenvpp]")
