@@ -136,6 +136,8 @@ class parsed_and_validated_prefix {
 	template <typename T, bool IsRequired>
 	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, const T default_value)
 	{
+		static_assert(!IsRequired, "Default values are not supported on required variables");
+
 		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
 		return value.has_value() ? std::any_cast<T>(value) : default_value;
 	}
@@ -197,18 +199,17 @@ class parsed_and_validated_prefix {
 			auto& var = m_prefix.m_registered_vars[id];
 			const auto var_name = get_full_env_var_name(id);
 			const auto similar_var = find_similar_env_var(var_name, environment);
-			auto msg = std::string();
 			if (similar_var.has_value()) {
-				msg += fmt::format("Unrecognized environment variable '{}' set, did you mean '{}'?", *similar_var,
-				                   var_name);
+				const auto msg = fmt::format("Unrecognized environment variable '{}' set, did you mean '{}'?",
+				                             *similar_var, var_name);
 				pop_from_environment(*similar_var, environment);
-			} else {
-				msg += fmt::format("Environment variable '{}' not set", var.m_name);
-			}
-			if (var.m_is_required) {
-				m_errors.emplace_back(id, var.m_name, msg);
-			} else {
-				m_warnings.emplace_back(id, var.m_name, msg);
+				if (var.m_is_required) {
+					m_errors.emplace_back(id, var.m_name, msg);
+				} else {
+					m_warnings.emplace_back(id, var.m_name, msg);
+				}
+			} else if (var.m_is_required) {
+				m_errors.emplace_back(id, var.m_name, fmt::format("Environment variable '{}' not set", var.m_name));
 			}
 		}
 

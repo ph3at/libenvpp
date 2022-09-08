@@ -112,6 +112,38 @@ TEST_CASE_METHOD(option_var_fixture, "Retrieving option environment variable", "
 	CHECK(*option_val == testing_option::SECOND_OPTION);
 }
 
+TEST_CASE("Unset environment variables", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Unset optional variable")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto var_id = pre.register_variable<int>("UNSET");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto var_opt_val = parsed_and_validated_pre.get(var_id);
+		CHECK_FALSE(var_opt_val.has_value());
+		const auto var_default_val = parsed_and_validated_pre.get_or(var_id, -1);
+		CHECK(var_default_val == -1);
+	}
+
+	SECTION("Unset required variable")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto var_id = pre.register_required_variable<int>("UNSET");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
+		                                                         && ContainsSubstring(prefix_name)
+		                                                         && ContainsSubstring("'UNSET' not set"));
+		// Should not compile
+		// const auto val = parsed_and_validated_pre.get_or(var_id, -1);
+	}
+}
+
 TEST_CASE("Retrieving errors", "[libenvpp]")
 {
 	const auto prefix_name = "PREFIX";
