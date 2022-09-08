@@ -256,4 +256,47 @@ TEST_CASE("Parser errors", "[libenvpp]")
 	}
 }
 
+struct unvalidatable_type {
+	unvalidatable_type(const std::string_view) {}
+};
+
+template <>
+struct default_validator<unvalidatable_type> {
+	void operator()(const unvalidatable_type&) const { throw validation_error{"Unvalidatable"}; }
+};
+
+TEST_CASE("Validation errors", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	const auto _ = detail::set_scoped_environment_variable{prefix_name + std::string("_ENV_VAR"), "FOO"};
+
+	SECTION("User-defined type with specialized default validator")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto var_id = pre.register_variable<unvalidatable_type>("ENV_VAR");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring(prefix_name) && ContainsSubstring("Validation error")
+		               && ContainsSubstring("Unvalidatable") && ContainsSubstring("ENV_VAR"));
+	}
+
+	SECTION("User-defined type with custom validator")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto var_id = pre.register_variable<int>(
+		    "ENV_VAR", [](const std::string_view) -> int { throw validation_error{"Unvalidatable"}; });
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring(prefix_name) && ContainsSubstring("Validation error")
+		               && ContainsSubstring("Unvalidatable") && ContainsSubstring("ENV_VAR"));
+	}
+}
+
 } // namespace env

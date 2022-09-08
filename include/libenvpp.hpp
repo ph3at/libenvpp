@@ -172,6 +172,10 @@ class parsed_and_validated_prefix {
 					m_errors.emplace_back(
 					    id, var.m_name,
 					    fmt::format("Parser error for environment variable '{}': {}", var.m_name, e.what()));
+				} catch (const validation_error& e) {
+					m_errors.emplace_back(
+					    id, var.m_name,
+					    fmt::format("Validation error for environment variable '{}': {}", var.m_name, e.what()));
 				} catch (const range_error& e) {
 					m_errors.emplace_back(
 					    id, var.m_name,

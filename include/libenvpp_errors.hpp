@@ -19,6 +19,12 @@ class parser_error : public std::runtime_error {
 	parser_error(const std::string_view message) : std::runtime_error(std::string(message)) {}
 };
 
+class validation_error : public std::runtime_error {
+  public:
+	validation_error() = delete;
+	validation_error(const std::string_view message) : std::runtime_error(std::string(message)) {}
+};
+
 class range_error : public std::runtime_error {
   public:
 	range_error() = delete;
