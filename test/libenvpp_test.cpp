@@ -346,4 +346,89 @@ TEST_CASE("Validation errors", "[libenvpp]")
 	}
 }
 
+TEST_CASE_METHOD(int_var_fixture, "Range environment variables", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Optional range")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto range_id = pre.register_range<int>("INT", 0, 100);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto range_val = parsed_and_validated_pre.get(range_id);
+		REQUIRE(range_val.has_value());
+		CHECK(*range_val == 42);
+	}
+
+	SECTION("Required range")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto range_id = pre.register_required_range<int>("INT", 0, 100);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto range_val = parsed_and_validated_pre.get(range_id);
+		CHECK(range_val == 42);
+	}
+}
+
+TEST_CASE_METHOD(int_var_fixture, "Invalid range environment variables", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Invalid optional range")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto range_id = pre.register_range<int>("INT", 100, 200);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring("Range error") && ContainsSubstring(prefix_name) && ContainsSubstring("INT")
+		               && ContainsSubstring("42") && ContainsSubstring("[100, 200]"));
+	}
+
+	SECTION("Required range")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto range_id = pre.register_required_range<int>("INT", 0, 100);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto range_val = parsed_and_validated_pre.get(range_id);
+		CHECK(range_val == 42);
+	}
+}
+
+TEST_CASE("Unset range environment variables", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Unset optional range")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto range_id = pre.register_range<int>("UNSET", 0, 100);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto range_opt_val = parsed_and_validated_pre.get(range_id);
+		CHECK_FALSE(range_opt_val.has_value());
+		const auto range_default_val = parsed_and_validated_pre.get_or(range_id, -1);
+		// Default value outside of range is allowed to make special case handling possible
+		CHECK(range_default_val == -1);
+	}
+
+	SECTION("Unset required range")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto range_id = pre.register_required_range<int>("UNSET", 0, 100);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
+		                                                         && ContainsSubstring(prefix_name)
+		                                                         && ContainsSubstring("'UNSET' not set"));
+	}
+}
+
 } // namespace env
