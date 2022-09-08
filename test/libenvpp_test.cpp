@@ -198,4 +198,17 @@ TEST_CASE("Set for testing", "[libenvpp]")
 	CHECK(float_val == 3.1415f);
 }
 
+TEST_CASE("Help message", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto int_id = pre.register_variable<int>("INTEGER");
+	const auto float_id = pre.register_required_variable<float>("FLOAT");
+	const auto pre_help_message = pre.help_message();
+	auto parsed_pre = pre.parse_and_validate();
+	const auto parsed_help_message = parsed_pre.help_message();
+	CHECK_THAT(pre_help_message, Equals(parsed_help_message));
+	CHECK_THAT(pre_help_message, ContainsSubstring("LIBENVPP_TESTING") && ContainsSubstring("2")
+	                                 && ContainsSubstring("INTEGER optional") && ContainsSubstring("FLOAT required"));
+}
+
 } // namespace env

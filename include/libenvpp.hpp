@@ -147,6 +147,8 @@ class parsed_and_validated_prefix {
 	[[nodiscard]] const std::vector<error>& errors() const { return m_errors; }
 	[[nodiscard]] const std::vector<error>& warnings() const { return m_warnings; }
 
+	[[nodiscard]] std::string help_message() const { return m_prefix.help_message(); }
+
   private:
 	parsed_and_validated_prefix(Prefix&& pre, std::unordered_map<std::string, std::string> environment)
 	    : m_prefix(std::move(pre))
@@ -357,8 +359,17 @@ class prefix {
 
 	[[nodiscard]] std::string help_message() const
 	{
-		// TODO: Implement
-		return {};
+		if (m_registered_vars.empty()) {
+			return fmt::format("There are no supported environment variables for the prefix '{}'", m_prefix_name);
+		}
+		auto msg = fmt::format("Prefix '{}' supports the following {} environment variable(s):\n", m_prefix_name,
+		                       m_registered_vars.size());
+		for (std::size_t i = 0; i < m_registered_vars.size(); ++i) {
+			const auto& var = m_registered_vars[i];
+			msg += fmt::format("\t{}{}{}", var.m_name, var.m_is_required ? " required" : " optional",
+			                   i + 1 < m_registered_vars.size() ? "\n" : "");
+		}
+		return msg;
 	}
 
   private:
