@@ -222,9 +222,9 @@ TEST_CASE("Parser errors", "[libenvpp]")
 		auto pre = env::prefix(prefix_name);
 		[[maybe_unused]] const auto int_id = pre.register_variable<int>("ENV_VAR");
 		auto parsed_and_validated_pre = pre.parse_and_validate();
-		REQUIRE_FALSE(parsed_and_validated_pre.ok());
-		REQUIRE(parsed_and_validated_pre.warnings().empty());
-		REQUIRE(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring(prefix_name) && ContainsSubstring("Parser error") && ContainsSubstring("ENV_VAR"));
 	}
@@ -234,9 +234,9 @@ TEST_CASE("Parser errors", "[libenvpp]")
 		auto pre = env::prefix(prefix_name);
 		[[maybe_unused]] const auto option_id = pre.register_variable<testing_option>("ENV_VAR");
 		auto parsed_and_validated_pre = pre.parse_and_validate();
-		REQUIRE_FALSE(parsed_and_validated_pre.ok());
-		REQUIRE(parsed_and_validated_pre.warnings().empty());
-		REQUIRE(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring(prefix_name) && ContainsSubstring("Parser error") && ContainsSubstring("ENV_VAR"));
 	}
@@ -247,9 +247,9 @@ TEST_CASE("Parser errors", "[libenvpp]")
 		[[maybe_unused]] const auto var_id = pre.register_variable<int>(
 		    "ENV_VAR", [](const std::string_view) -> int { throw parser_error{"Unparseable"}; });
 		auto parsed_and_validated_pre = pre.parse_and_validate();
-		REQUIRE_FALSE(parsed_and_validated_pre.ok());
-		REQUIRE(parsed_and_validated_pre.warnings().empty());
-		REQUIRE(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring(prefix_name) && ContainsSubstring("Parser error")
 		               && ContainsSubstring("Unparseable") && ContainsSubstring("ENV_VAR"));
