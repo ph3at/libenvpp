@@ -163,7 +163,7 @@ TEST_CASE("Unused variable with same prefix", "[libenvpp]")
 {
 	SECTION("Actual prefix")
 	{
-		const auto scoped_env_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "FOO"};
+		const auto _ = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "FOO"};
 
 		auto pre = env::prefix("LIBENVPP_TESTING");
 		auto parsed_and_validated_pre = pre.parse_and_validate();
@@ -174,7 +174,7 @@ TEST_CASE("Unused variable with same prefix", "[libenvpp]")
 
 	SECTION("Prefix is a substring, but not at the beginning")
 	{
-		const auto scoped_env_var = detail::set_scoped_environment_variable{"FOO_LIBENVPP_TESTING", "FOO"};
+		const auto _ = detail::set_scoped_environment_variable{"FOO_LIBENVPP_TESTING", "FOO"};
 
 		auto pre = env::prefix("LIBENVPP_TESTING");
 		auto parsed_and_validated_pre = pre.parse_and_validate();
@@ -201,8 +201,8 @@ TEST_CASE("Set for testing", "[libenvpp]")
 TEST_CASE("Help message", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
-	const auto int_id = pre.register_variable<int>("INTEGER");
-	const auto float_id = pre.register_required_variable<float>("FLOAT");
+	[[maybe_unused]] const auto int_id = pre.register_variable<int>("INTEGER");
+	[[maybe_unused]] const auto float_id = pre.register_required_variable<float>("FLOAT");
 	const auto pre_help_message = pre.help_message();
 	auto parsed_pre = pre.parse_and_validate();
 	const auto parsed_help_message = parsed_pre.help_message();
