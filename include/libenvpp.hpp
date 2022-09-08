@@ -171,16 +171,15 @@ class parsed_and_validated_prefix {
 				} catch (const parser_error& e) {
 					m_errors.emplace_back(
 					    id, var.m_name,
-					    fmt::format("Parser error for environment variable '{}': ", var.m_name, e.what()));
+					    fmt::format("Parser error for environment variable '{}': {}", var.m_name, e.what()));
 				} catch (const range_error& e) {
 					m_errors.emplace_back(
 					    id, var.m_name,
-					    fmt::format("Range error for environment variable '{}': ", var.m_name, e.what()));
+					    fmt::format("Range error for environment variable '{}': {}", var.m_name, e.what()));
 				} catch (const std::exception& e) {
-					m_errors.emplace_back(
-					    id, var.m_name,
-					    fmt::format("Failed to parse or validate environment variable '{}' with: '{}'", var.m_name,
-					                e.what()));
+					m_errors.emplace_back(id, var.m_name,
+					                      fmt::format("Failed to parse or validate environment variable '{}' with: {}",
+					                                  var.m_name, e.what()));
 				} catch (...) {
 					m_errors.emplace_back(
 					    id, var.m_name,
