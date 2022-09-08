@@ -276,7 +276,7 @@ class parsed_and_validated_prefix {
 	{
 		auto unused_env_vars = std::vector<std::string>{};
 		for (const auto& [var, _] : environment) {
-			if (var.find(m_prefix.m_prefix_name) != m_prefix.m_prefix_name.npos) {
+			if (var.find(m_prefix.m_prefix_name) == 0) {
 				unused_env_vars.push_back(var);
 			}
 		}
