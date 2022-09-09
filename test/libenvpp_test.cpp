@@ -450,4 +450,92 @@ TEST_CASE("Unset range environment variables", "[libenvpp]")
 	}
 }
 
+TEST_CASE_METHOD(int_var_fixture, "Option environment variables", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Optional option")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto option_id = pre.register_option<int>("INT", {41, 42, 43});
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto option_val = parsed_and_validated_pre.get(option_id);
+		REQUIRE(option_val.has_value());
+		CHECK(*option_val == 42);
+	}
+
+	SECTION("Required option")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto option_id = pre.register_required_option<int>("INT", {41, 42, 43});
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto option_val = parsed_and_validated_pre.get(option_id);
+		CHECK(option_val == 42);
+	}
+}
+
+TEST_CASE_METHOD(int_var_fixture, "Invalid option environment variables", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Invalid optional option")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto option_id = pre.register_option<int>("INT", {1, 2, 3});
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring("Unrecognized option") && ContainsSubstring(prefix_name)
+		               && ContainsSubstring("INT") && ContainsSubstring("42"));
+	}
+
+	SECTION("Invalid required option")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto option_id = pre.register_required_option<int>("INT", {1, 2, 3});
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring("Unrecognized option") && ContainsSubstring(prefix_name)
+		               && ContainsSubstring("INT") && ContainsSubstring("42"));
+	}
+}
+
+TEST_CASE("Unset option environment variables", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Unset optional option")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto option_id = pre.register_option<int>("UNSET", {1});
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto option_opt_val = parsed_and_validated_pre.get(option_id);
+		CHECK_FALSE(option_opt_val.has_value());
+		const auto option_default_val = parsed_and_validated_pre.get_or(option_id, -1);
+		// Default value outside of available options is allowed to make special case handling possible
+		CHECK(option_default_val == -1);
+	}
+
+	SECTION("Unset required option")
+	{
+		auto pre = env::prefix(prefix_name);
+		[[maybe_unused]] const auto option_id = pre.register_required_option<int>("UNSET", {1});
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
+		                                                         && ContainsSubstring(prefix_name)
+		                                                         && ContainsSubstring("'UNSET' not set"));
+	}
+}
+
 } // namespace env
