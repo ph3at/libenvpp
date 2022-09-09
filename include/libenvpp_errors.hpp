@@ -19,6 +19,12 @@ class duplicate_option : public std::invalid_argument {
 	duplicate_option(const std::string_view message) : std::invalid_argument(std::string(message)) {}
 };
 
+class invalid_range : public std::invalid_argument {
+  public:
+	invalid_range() = delete;
+	invalid_range(const std::string_view message) : std::invalid_argument(std::string(message)) {}
+};
+
 class parser_error : public std::runtime_error {
   public:
 	parser_error() = delete;

@@ -392,6 +392,10 @@ class prefix {
 	template <typename T, bool IsRequired>
 	[[nodiscard]] auto registration_range_helper(const std::string_view name, const T min, const T max)
 	{
+		if (min > max) {
+			throw invalid_range{fmt::format("Invalid range [{}, {}], min must be less or equal to max", min, max)};
+		}
+
 		const auto parser_and_validator = [min, max](const std::string_view str) {
 			const auto value = default_parser<T>{}(str);
 			default_validator<T>{}(value);

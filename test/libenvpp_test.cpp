@@ -386,6 +386,23 @@ TEST_CASE_METHOD(int_var_fixture, "Range environment variables", "[libenvpp]")
 		const auto range_val = parsed_and_validated_pre.get(range_id);
 		CHECK(range_val == 42);
 	}
+
+	SECTION("Single element range")
+	{
+		auto pre = env::prefix(prefix_name);
+		const auto range_id = pre.register_required_range<int>("INT", 42, 42);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto range_val = parsed_and_validated_pre.get(range_id);
+		CHECK(range_val == 42);
+	}
+}
+
+TEST_CASE("Invalid range registered", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	CHECK_THROWS_AS(pre.register_range<int>("INT", 200, 100), invalid_range);
+	CHECK_THROWS_AS(pre.register_required_range<int>("INT", 200, 100), invalid_range);
 }
 
 TEST_CASE_METHOD(int_var_fixture, "Invalid range environment variables", "[libenvpp]")
