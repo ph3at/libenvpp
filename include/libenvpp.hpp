@@ -417,6 +417,7 @@ class prefix {
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
 				throw unrecognized_option{fmt::format("Unrecognized option '{}' for '{}'", str, name)};
 			}
+			return value;
 		};
 		return registration_helper<T, IsRequired>(name, std::move(parser_and_validator));
 	}
