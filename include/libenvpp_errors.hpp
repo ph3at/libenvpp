@@ -7,6 +7,12 @@
 
 namespace env {
 
+class empty_option : public std::invalid_argument {
+  public:
+	empty_option() = delete;
+	empty_option(const std::string_view message) : std::invalid_argument(std::string(message)) {}
+};
+
 class duplicate_option : public std::invalid_argument {
   public:
 	duplicate_option() = delete;

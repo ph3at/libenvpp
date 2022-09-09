@@ -406,6 +406,10 @@ class prefix {
 	template <typename T, bool IsRequired>
 	[[nodiscard]] auto registration_option_helper(const std::string_view name, const std::initializer_list<T> options)
 	{
+		if (options.size() == 0) {
+			throw empty_option{fmt::format("No options provided for '{}'", name)};
+		}
+
 		const auto options_set = std::set(options.begin(), options.end());
 		if (options_set.size() != options.size()) {
 			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", name)};
