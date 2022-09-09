@@ -405,14 +405,17 @@ TEST_CASE_METHOD(int_var_fixture, "Invalid range environment variables", "[liben
 		               && ContainsSubstring("42") && ContainsSubstring("[100, 200]"));
 	}
 
-	SECTION("Required range")
+	SECTION("Invalid required range")
 	{
 		auto pre = env::prefix(prefix_name);
-		const auto range_id = pre.register_required_range<int>("INT", 0, 100);
+		[[maybe_unused]] const auto range_id = pre.register_required_range<int>("INT", 100, 200);
 		auto parsed_and_validated_pre = pre.parse_and_validate();
-		CHECK(parsed_and_validated_pre.ok());
-		const auto range_val = parsed_and_validated_pre.get(range_id);
-		CHECK(range_val == 42);
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		CHECK(parsed_and_validated_pre.errors().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring("Range error") && ContainsSubstring(prefix_name) && ContainsSubstring("INT")
+		               && ContainsSubstring("42") && ContainsSubstring("[100, 200]"));
 	}
 }
 
