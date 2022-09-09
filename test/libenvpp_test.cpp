@@ -206,6 +206,22 @@ TEST_CASE_METHOD(int_var_fixture, "Typo detection using edit distance", "[libenv
 	}
 }
 
+TEST_CASE("Typo detection does not trigger on already consumed variables", "[libenvpp]")
+{
+	const auto foo_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "BAR"};
+	const auto fou_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOU", "BAR"};
+
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	[[maybe_unused]] const auto foo_id = pre.register_variable<std::string>("FOO");
+	[[maybe_unused]] const auto fuu_id = pre.register_variable<std::string>("FUU");
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	REQUIRE_FALSE(parsed_and_validated_pre.ok());
+
+	CHECK_THAT(parsed_and_validated_pre.warning_message(),
+	           ContainsSubstring("'LIBENVPP_TESTING_FOU' set")
+	               && ContainsSubstring("did you mean 'LIBENVPP_TESTING_FUU'"));
+}
+
 TEST_CASE("Unused variable with same prefix", "[libenvpp]")
 {
 	SECTION("Actual prefix")
