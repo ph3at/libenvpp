@@ -497,12 +497,14 @@ TEST_CASE("Empty option", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	CHECK_THROWS_AS(pre.register_option<int>("INT", {}), empty_option);
+	CHECK_THROWS_AS(pre.register_required_option<int>("INT", {}), empty_option);
 }
 
 TEST_CASE("Duplicate option", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	CHECK_THROWS_AS(pre.register_option<int>("INT", {1, 1}), duplicate_option);
+	CHECK_THROWS_AS(pre.register_required_option<int>("INT", {1, 1}), duplicate_option);
 }
 
 TEST_CASE_METHOD(int_var_fixture, "Invalid option environment variables", "[libenvpp]")
