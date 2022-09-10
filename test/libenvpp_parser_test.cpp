@@ -56,6 +56,7 @@ static_assert(is_string_constructible_v<string_constructible_2> == true);
 static_assert(is_string_constructible_v<string_constructible_3> == true);
 static_assert(is_string_constructible_v<string_constructible_4> == true);
 static_assert(is_string_constructible_v<string_constructible_5> == true);
+static_assert(is_string_constructible_v<string_constructible_6> == true);
 static_assert(is_string_constructible_v<char> == false);
 static_assert(is_string_constructible_v<char*> == false);
 static_assert(is_string_constructible_v<const char*> == false);
