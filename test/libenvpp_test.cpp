@@ -179,6 +179,37 @@ TEST_CASE_METHOD(string_var_fixture, "User-defined type with specialized default
 	}
 }
 
+std::string string_parser_and_validator_fn(const std::string_view str)
+{
+	const auto val = std::string(str);
+	CHECK_THAT(val, Equals("Hello World"));
+	return val;
+}
+
+TEST_CASE_METHOD(string_var_fixture, "User-defined parser and validator function", "[libenvpp]")
+{
+	SECTION("Optional")
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto var_id = pre.register_variable<std::string>("STRING", string_parser_and_validator_fn);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto var_opt_val = parsed_and_validated_pre.get(var_id);
+		REQUIRE(var_opt_val.has_value());
+		CHECK_THAT(*var_opt_val, Equals("Hello World"));
+	}
+
+	SECTION("Required")
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto var_id = pre.register_required_variable<std::string>("STRING", string_parser_and_validator_fn);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto var_val = parsed_and_validated_pre.get(var_id);
+		CHECK_THAT(var_val, Equals("Hello World"));
+	}
+}
+
 TEST_CASE("Unset environment variables", "[libenvpp]")
 {
 	constexpr auto prefix_name = "LIBENVPP_TESTING";
