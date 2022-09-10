@@ -382,6 +382,8 @@ class prefix {
 	{
 		const auto type_erased_parser_and_validator =
 		    [parser_and_validator](const std::string_view env_value) -> std::any {
+			static_assert(std::is_convertible_v<decltype(parser_and_validator(env_value)), T>,
+			              "Parser and validator function must return type convertible to T");
 			return parser_and_validator(env_value);
 		};
 		m_registered_vars.push_back(
