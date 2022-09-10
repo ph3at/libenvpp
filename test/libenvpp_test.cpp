@@ -112,6 +112,73 @@ TEST_CASE_METHOD(option_var_fixture, "Retrieving option environment variable", "
 	CHECK(*option_val == testing_option::SECOND_OPTION);
 }
 
+struct user_parsable_type {
+	std::string value;
+};
+
+template <>
+struct default_parser<user_parsable_type> {
+	[[nodiscard]] user_parsable_type operator()(const std::string_view str) const { return {std::string(str)}; }
+};
+
+TEST_CASE_METHOD(string_var_fixture, "User-defined type with specialized default parser", "[libenvpp]")
+{
+	SECTION("Optional")
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto var_id = pre.register_variable<user_parsable_type>("STRING");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto var_opt_val = parsed_and_validated_pre.get(var_id);
+		REQUIRE(var_opt_val.has_value());
+		CHECK_THAT(var_opt_val->value, Equals("Hello World"));
+	}
+
+	SECTION("Required")
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto var_id = pre.register_required_variable<user_parsable_type>("STRING");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto var_val = parsed_and_validated_pre.get(var_id);
+		CHECK_THAT(var_val.value, Equals("Hello World"));
+	}
+}
+
+struct user_validatable_type {
+	user_validatable_type(const std::string_view str) : value(str) {}
+	std::string value;
+};
+
+template <>
+struct default_validator<user_validatable_type> {
+	void operator()(const user_validatable_type& value) const { CHECK_THAT(value.value, Equals("Hello World")); }
+};
+
+TEST_CASE_METHOD(string_var_fixture, "User-defined type with specialized default validator", "[libenvpp]")
+{
+	SECTION("Optional")
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto var_id = pre.register_variable<user_validatable_type>("STRING");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto var_opt_val = parsed_and_validated_pre.get(var_id);
+		REQUIRE(var_opt_val.has_value());
+		CHECK_THAT(var_opt_val->value, Equals("Hello World"));
+	}
+
+	SECTION("Required")
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto var_id = pre.register_required_variable<user_validatable_type>("STRING");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto var_val = parsed_and_validated_pre.get(var_id);
+		CHECK_THAT(var_val.value, Equals("Hello World"));
+	}
+}
+
 TEST_CASE("Unset environment variables", "[libenvpp]")
 {
 	constexpr auto prefix_name = "LIBENVPP_TESTING";
