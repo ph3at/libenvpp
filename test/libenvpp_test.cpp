@@ -1,7 +1,9 @@
 #include <iostream>
+#include <limits>
 #include <string>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <libenvpp.hpp>
@@ -590,6 +592,42 @@ TEST_CASE("Unset range environment variables", "[libenvpp]")
 		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
 		                                                         && ContainsSubstring(prefix_name)
 		                                                         && ContainsSubstring("'UNSET' not set"));
+	}
+}
+
+TEST_CASE("Using numeric limits as range", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	SECTION("Lower bound")
+	{
+		const auto test_num =
+		    GENERATE(std::numeric_limits<int>::lowest(), std::numeric_limits<int>::lowest() + 1, 0, 100);
+		const auto _ =
+		    detail::set_scoped_environment_variable{prefix_name + std::string("_ENV_VAR"), std::to_string(test_num)};
+
+		auto pre = env::prefix(prefix_name);
+		const auto range_id = pre.register_range<int>("ENV_VAR", std::numeric_limits<int>::lowest(), 100);
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto range_val = parsed_and_validated_pre.get(range_id);
+		REQUIRE(range_val.has_value());
+		CHECK(*range_val == test_num);
+	}
+
+	SECTION("Upper bound")
+	{
+		const auto test_num = GENERATE(std::numeric_limits<int>::max(), std::numeric_limits<int>::max() - 1, 0, -100);
+		const auto _ =
+		    detail::set_scoped_environment_variable{prefix_name + std::string("_ENV_VAR"), std::to_string(test_num)};
+
+		auto pre = env::prefix(prefix_name);
+		const auto range_id = pre.register_range<int>("ENV_VAR", -100, std::numeric_limits<int>::max());
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK(parsed_and_validated_pre.ok());
+		const auto range_val = parsed_and_validated_pre.get(range_id);
+		REQUIRE(range_val.has_value());
+		CHECK(*range_val == test_num);
 	}
 }
 
