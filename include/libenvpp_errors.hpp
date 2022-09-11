@@ -19,6 +19,12 @@ class duplicate_option : public std::invalid_argument {
 	duplicate_option(const std::string_view message) : std::invalid_argument(std::string(message)) {}
 };
 
+class unrecognized_option : public std::runtime_error {
+  public:
+	unrecognized_option() = delete;
+	unrecognized_option(const std::string_view message) : std::runtime_error(std::string(message)) {}
+};
+
 class invalid_range : public std::invalid_argument {
   public:
 	invalid_range() = delete;
@@ -43,10 +49,10 @@ class range_error : public std::runtime_error {
 	range_error(const std::string_view message) : std::runtime_error(std::string(message)) {}
 };
 
-class unrecognized_option : public std::runtime_error {
+class value_error : public std::runtime_error {
   public:
-	unrecognized_option() = delete;
-	unrecognized_option(const std::string_view message) : std::runtime_error(std::string(message)) {}
+	value_error() = delete;
+	value_error(const std::string_view message) : std::runtime_error(std::string(message)) {}
 };
 
 class error {

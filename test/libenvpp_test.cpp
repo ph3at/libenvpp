@@ -259,7 +259,7 @@ TEST_CASE("Unset environment variables", "[libenvpp]")
 	SECTION("Unset required variable")
 	{
 		auto pre = env::prefix(prefix_name);
-		[[maybe_unused]] const auto var_id = pre.register_required_variable<int>("UNSET");
+		const auto var_id = pre.register_required_variable<int>("UNSET");
 		auto parsed_and_validated_pre = pre.parse_and_validate();
 		CHECK_FALSE(parsed_and_validated_pre.ok());
 		CHECK(parsed_and_validated_pre.warnings().empty());
@@ -267,6 +267,8 @@ TEST_CASE("Unset environment variables", "[libenvpp]")
 		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
 		                                                         && ContainsSubstring(prefix_name)
 		                                                         && ContainsSubstring("'UNSET' not set"));
+		CHECK_THROWS_AS(parsed_and_validated_pre.get(var_id), value_error);
+
 		// Should not compile
 		// const auto val = parsed_and_validated_pre.get_or(var_id, -1);
 	}

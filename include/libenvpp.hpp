@@ -123,10 +123,14 @@ class parsed_and_validated_prefix {
 	parsed_and_validated_prefix& operator=(parsed_and_validated_prefix&&) = default;
 
 	template <typename T, bool IsRequired>
-	[[nodiscard]] auto get(const variable_id<T, IsRequired>& var_id)
+	[[nodiscard]] auto get(const variable_id<T, IsRequired>& var_id) const
 	{
 		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
 		if constexpr (IsRequired) {
+			if (!value.has_value()) {
+				throw value_error{fmt::format("Variable '{}' does not hold a value",
+				                              m_prefix.m_registered_vars[var_id.m_idx].m_name)};
+			}
 			return std::any_cast<T>(value);
 		} else {
 			return value.has_value() ? std::optional<T>{std::any_cast<T>(value)} : std::optional<T>{std::nullopt};
@@ -134,7 +138,7 @@ class parsed_and_validated_prefix {
 	}
 
 	template <typename T, bool IsRequired>
-	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, const T default_value)
+	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, const T& default_value) const
 	{
 		static_assert(!IsRequired, "Default values are not supported on required variables");
 
