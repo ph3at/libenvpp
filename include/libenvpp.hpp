@@ -117,14 +117,24 @@ class parsed_and_validated_prefix {
 	parsed_and_validated_prefix() = delete;
 
 	parsed_and_validated_prefix(const parsed_and_validated_prefix&) = delete;
-	parsed_and_validated_prefix(parsed_and_validated_prefix&&) = default;
+	parsed_and_validated_prefix(parsed_and_validated_prefix&& other) noexcept { *this = std::move(other); }
 
 	parsed_and_validated_prefix& operator=(const parsed_and_validated_prefix&) = delete;
-	parsed_and_validated_prefix& operator=(parsed_and_validated_prefix&&) = default;
+	parsed_and_validated_prefix& operator=(parsed_and_validated_prefix&& other) noexcept
+	{
+		m_prefix = std::move(other.m_prefix);
+		m_errors = std::move(other.m_errors);
+		m_warnings = std::move(other.m_warnings);
+		m_invalidated = std::move(other.m_invalidated);
+		other.m_invalidated = true;
+		return *this;
+	}
 
 	template <typename T, bool IsRequired>
 	[[nodiscard]] auto get(const variable_id<T, IsRequired>& var_id) const
 	{
+		throw_if_invalid();
+
 		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
 		if constexpr (IsRequired) {
 			if (!value.has_value()) {
@@ -142,20 +152,56 @@ class parsed_and_validated_prefix {
 	{
 		static_assert(!IsRequired, "Default values are not supported on required variables");
 
+		throw_if_invalid();
+
 		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
 		return value.has_value() ? std::any_cast<T>(value) : default_value;
 	}
 
-	[[nodiscard]] bool ok() const noexcept { return m_errors.empty() && m_warnings.empty(); }
-	[[nodiscard]] std::string error_message() const { return message_formatting_helper("error", m_errors); }
-	[[nodiscard]] std::string warning_message() const { return message_formatting_helper("warning", m_warnings); }
+	[[nodiscard]] bool ok() const
+	{
+		throw_if_invalid();
+		return m_errors.empty() && m_warnings.empty();
+	}
 
-	[[nodiscard]] const std::vector<error>& errors() const { return m_errors; }
-	[[nodiscard]] const std::vector<error>& warnings() const { return m_warnings; }
+	[[nodiscard]] std::string error_message() const
+	{
+		throw_if_invalid();
+		return message_formatting_helper("error", m_errors);
+	}
 
-	[[nodiscard]] std::string help_message() const { return m_prefix.help_message(); }
+	[[nodiscard]] std::string warning_message() const
+	{
+		throw_if_invalid();
+		return message_formatting_helper("warning", m_warnings);
+	}
+
+	[[nodiscard]] const std::vector<error>& errors() const
+	{
+		throw_if_invalid();
+		return m_errors;
+	}
+
+	[[nodiscard]] const std::vector<error>& warnings() const
+	{
+		throw_if_invalid();
+		return m_warnings;
+	}
+
+	[[nodiscard]] std::string help_message() const
+	{
+		throw_if_invalid();
+		return m_prefix.help_message();
+	}
 
   private:
+	void throw_if_invalid() const
+	{
+		if (m_invalidated) {
+			throw invalidated_prefix{"Parsed and validated prefix has been invalidated by moving from it"};
+		}
+	}
+
 	parsed_and_validated_prefix(Prefix&& pre, std::unordered_map<std::string, std::string> environment)
 	    : m_prefix(std::move(pre))
 	{
@@ -296,13 +342,13 @@ class parsed_and_validated_prefix {
 	Prefix m_prefix;
 	std::vector<error> m_errors;
 	std::vector<error> m_warnings;
+	bool m_invalidated = false;
 
 	friend prefix;
 };
 
 class prefix {
   public:
-	prefix() = delete;
 	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 3)
 	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
 	{}
@@ -393,6 +439,8 @@ class prefix {
 	}
 
   private:
+	prefix() = default;
+
 	void throw_if_invalid() const
 	{
 		if (m_invalidated) {

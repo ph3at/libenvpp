@@ -896,4 +896,35 @@ TEST_CASE("Parsed and validated prefix can be moved", "[libenvpp]")
 	}
 }
 
+TEST_CASE("Moved from parsed and validated prefix throws", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto int_var = pre.register_variable<int>("ENV_VAR");
+	pre.set_for_testing(int_var, 7);
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+
+	const auto check_prefix = [&int_var](const auto& parsed_pre) {
+		CHECK_THROWS_AS(parsed_pre.ok(), invalidated_prefix);
+		CHECK_THROWS_AS(parsed_pre.error_message(), invalidated_prefix);
+		CHECK_THROWS_AS(parsed_pre.warning_message(), invalidated_prefix);
+		CHECK_THROWS_AS(parsed_pre.errors().empty(), invalidated_prefix);
+		CHECK_THROWS_AS(parsed_pre.warnings().empty(), invalidated_prefix);
+		CHECK_THROWS_AS(parsed_pre.help_message(), invalidated_prefix);
+		CHECK_THROWS_AS(parsed_pre.get_or(int_var, 4), invalidated_prefix);
+		CHECK_THROWS_AS(parsed_pre.get(int_var), invalidated_prefix);
+	};
+
+	SECTION("Move construction")
+	{
+		auto moved_parsed_pre = std::move(parsed_and_validated_pre);
+		check_prefix(parsed_and_validated_pre);
+	}
+	SECTION("Move assignment")
+	{
+		auto moved_parsed_pre = std::move(parsed_and_validated_pre);
+		parsed_and_validated_pre = std::move(moved_parsed_pre);
+		check_prefix(moved_parsed_pre);
+	}
+}
+
 } // namespace env
