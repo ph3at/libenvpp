@@ -772,4 +772,31 @@ TEST_CASE("Custom environment", "[libenvpp]")
 	}
 }
 
+TEST_CASE_METHOD(int_var_fixture, "Variable IDs can only be copied", "[libenvpp]")
+{
+	constexpr auto prefix_name = "LIBENVPP_TESTING";
+
+	auto pre = env::prefix(prefix_name);
+	const auto int_id = pre.register_variable<int>("INT");
+	using id_t = std::remove_cv_t<decltype(int_id)>;
+	static_assert(!std::is_move_constructible_v<id_t>);
+	static_assert(!std::is_move_assignable_v<id_t>);
+	static_assert(std::is_copy_constructible_v<id_t>);
+	static_assert(std::is_copy_assignable_v<id_t>);
+	const auto int_id_copy_constructed = int_id;
+	auto int_id_copy_assigned = int_id;
+	int_id_copy_assigned = int_id_copy_constructed;
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	CHECK(parsed_and_validated_pre.ok());
+	const auto int_id_val = parsed_and_validated_pre.get(int_id);
+	const auto int_id_copy_constructed_val = parsed_and_validated_pre.get(int_id_copy_constructed);
+	const auto int_id_copy_assigned_val = parsed_and_validated_pre.get(int_id_copy_assigned);
+	REQUIRE(int_id_val.has_value());
+	REQUIRE(int_id_copy_constructed_val.has_value());
+	REQUIRE(int_id_copy_assigned_val.has_value());
+	CHECK(*int_id_val == 42);
+	CHECK(*int_id_copy_constructed_val == 42);
+	CHECK(*int_id_copy_assigned_val == 42);
+}
+
 } // namespace env

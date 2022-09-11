@@ -88,11 +88,11 @@ template <typename T, bool IsRequired>
 class variable_id {
   public:
 	variable_id() = delete;
-	variable_id(const variable_id&) = delete;
-	variable_id(variable_id&&) = default;
+	variable_id(const variable_id&) = default;
+	variable_id(variable_id&&) = delete;
 
-	variable_id& operator=(const variable_id&) = delete;
-	variable_id& operator=(variable_id&&) = default;
+	variable_id& operator=(const variable_id&) = default;
+	variable_id& operator=(variable_id&&) = delete;
 
 	bool operator==(const std::size_t rhs) const noexcept { return m_idx == rhs; }
 	bool operator!=(const std::size_t rhs) const noexcept { return !(*this == rhs); }
@@ -103,7 +103,7 @@ class variable_id {
   private:
 	variable_id(const std::size_t idx) : m_idx(idx) {}
 
-	const std::size_t m_idx;
+	std::size_t m_idx;
 
 	friend prefix;
 	template <typename Prefix>
