@@ -820,6 +820,12 @@ TEST_CASE("Empty prefix can be validated", "[libenvpp]")
 
 TEST_CASE("Prefix can be moved", "[libenvpp]")
 {
+	static_assert(!std::is_default_constructible_v<prefix>);
+	static_assert(std::is_move_constructible_v<prefix>);
+	static_assert(std::is_move_assignable_v<prefix>);
+	static_assert(!std::is_copy_constructible_v<prefix>);
+	static_assert(!std::is_copy_assignable_v<prefix>);
+
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	const auto int_var = pre.register_required_variable<int>("INT");
 	auto moved_pre = std::move(pre);
@@ -870,6 +876,13 @@ TEST_CASE("Parsed and validated prefix can be moved", "[libenvpp]")
 	const auto int_var = pre.register_variable<int>("ENV_VAR");
 	pre.set_for_testing(int_var, 7);
 	auto parsed_and_validated_pre = pre.parse_and_validate();
+
+	using parsed_and_validated_prefix_t = std::remove_cv_t<decltype(parsed_and_validated_pre)>;
+	static_assert(!std::is_default_constructible_v<parsed_and_validated_prefix_t>);
+	static_assert(std::is_move_constructible_v<parsed_and_validated_prefix_t>);
+	static_assert(std::is_move_assignable_v<parsed_and_validated_prefix_t>);
+	static_assert(!std::is_copy_constructible_v<parsed_and_validated_prefix_t>);
+	static_assert(!std::is_copy_assignable_v<parsed_and_validated_prefix_t>);
 
 	const auto check_prefix = [&int_var](const auto& parsed_pre) {
 		CHECK(parsed_pre.ok());
