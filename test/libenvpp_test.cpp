@@ -733,4 +733,41 @@ TEST_CASE("Unset option environment variables", "[libenvpp]")
 	}
 }
 
+TEST_CASE("Custom environment", "[libenvpp]")
+{
+	auto custom_env = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "42"},
+	    {"LIBENVPP_TESTING_FLOAT", "3.1415"},
+	    {"LIBENVPP_TESTING_STRING", "Hello World"},
+	};
+
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto int_id = pre.register_required_variable<int>("INT");
+	const auto float_id = pre.register_required_variable<float>("FLOAT");
+	const auto string_id = pre.register_required_variable<std::string>("STRING");
+
+	SECTION("Found in custom env")
+	{
+		auto parsed_and_validated_pre = pre.parse_and_validate(custom_env);
+		CHECK(parsed_and_validated_pre.ok());
+		const auto int_val = parsed_and_validated_pre.get(int_id);
+		const auto float_val = parsed_and_validated_pre.get(float_id);
+		const auto string_val = parsed_and_validated_pre.get(string_id);
+		CHECK(int_val == 42);
+		CHECK(float_val == 3.1415f);
+		CHECK_THAT(string_val, Equals("Hello World"));
+	}
+
+	SECTION("Not found in system env")
+	{
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().empty());
+		REQUIRE(parsed_and_validated_pre.errors().size() == 3);
+		CHECK(parsed_and_validated_pre.errors()[0].get_id() == int_id);
+		CHECK(parsed_and_validated_pre.errors()[1].get_id() == float_id);
+		CHECK(parsed_and_validated_pre.errors()[2].get_id() == string_id);
+	}
+}
+
 } // namespace env
