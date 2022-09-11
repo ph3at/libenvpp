@@ -507,7 +507,7 @@ class prefix {
 	}
 
 	std::string m_prefix_name;
-	int m_edit_distance_cutoff;
+	int m_edit_distance_cutoff = -1;
 	std::vector<detail::variable_data> m_registered_vars;
 	bool m_invalidated = false;
 
