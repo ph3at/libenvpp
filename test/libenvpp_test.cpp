@@ -811,4 +811,11 @@ TEST_CASE_METHOD(int_var_fixture, "Variable IDs can only be copied", "[libenvpp]
 	CHECK(*int_id_copy_assigned_val == 42);
 }
 
+TEST_CASE("Empty prefix can be validated", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	CHECK(parsed_and_validated_pre.ok());
+}
+
 } // namespace env
