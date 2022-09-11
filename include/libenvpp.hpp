@@ -386,7 +386,7 @@ class prefix {
 		                       m_registered_vars.size());
 		for (std::size_t i = 0; i < m_registered_vars.size(); ++i) {
 			const auto& var = m_registered_vars[i];
-			msg += fmt::format("\t{}{}{}", var.m_name, var.m_is_required ? " required" : " optional",
+			msg += fmt::format("\t'{}' {}{}", var.m_name, var.m_is_required ? "required" : "optional",
 			                   i + 1 < m_registered_vars.size() ? "\n" : "");
 		}
 		return msg;

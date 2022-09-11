@@ -411,8 +411,8 @@ TEST_CASE("Help message", "[libenvpp]")
 		const auto parsed_help_message = parsed_pre.help_message();
 		CHECK_THAT(pre_help_message, Equals(parsed_help_message));
 		CHECK_THAT(pre_help_message, ContainsSubstring("LIBENVPP_TESTING") && ContainsSubstring("2")
-		                                 && ContainsSubstring("INTEGER optional")
-		                                 && ContainsSubstring("FLOAT required"));
+		                                 && ContainsSubstring("'INTEGER' optional")
+		                                 && ContainsSubstring("'FLOAT' required"));
 	}
 }
 
