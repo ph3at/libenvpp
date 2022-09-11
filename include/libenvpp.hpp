@@ -307,10 +307,18 @@ class prefix {
 	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
 	{}
 	prefix(const prefix&) = delete;
-	prefix(prefix&&) = default;
+	prefix(prefix&& other) noexcept { *this = std::move(other); }
 
 	prefix& operator=(const prefix&) = delete;
-	prefix& operator=(prefix&&) = default;
+	prefix& operator=(prefix&& other) noexcept
+	{
+		m_prefix_name = std::move(other.m_prefix_name);
+		m_edit_distance_cutoff = std::move(other.m_edit_distance_cutoff);
+		m_registered_vars = std::move(other.m_registered_vars);
+		m_invalidated = std::move(other.m_invalidated);
+		other.m_invalidated = true;
+		return *this;
+	}
 
 	~prefix() = default;
 
@@ -356,17 +364,21 @@ class prefix {
 	template <typename T, bool IsRequired>
 	void set_for_testing(const variable_id<T, IsRequired>& var_id, const T& value)
 	{
+		throw_if_invalid();
 		m_registered_vars[var_id.m_idx].m_value = value;
 	}
 
 	[[nodiscard]] parsed_and_validated_prefix<prefix>
 	parse_and_validate(std::unordered_map<std::string, std::string> environment = detail::get_environment())
 	{
+		throw_if_invalid();
 		return {std::move(*this), std::move(environment)};
 	}
 
 	[[nodiscard]] std::string help_message() const
 	{
+		throw_if_invalid();
+
 		if (m_registered_vars.empty()) {
 			return fmt::format("There are no supported environment variables for the prefix '{}'", m_prefix_name);
 		}
@@ -381,9 +393,19 @@ class prefix {
 	}
 
   private:
+	void throw_if_invalid() const
+	{
+		if (m_invalidated) {
+			throw invalidated_prefix{
+			    "Prefix has been invalidated by either moving from it or by parsing and validating it"};
+		}
+	}
+
 	template <typename T, bool IsRequired, typename ParserAndValidatorFn>
 	[[nodiscard]] auto registration_helper(const std::string_view name, ParserAndValidatorFn&& parser_and_validator)
 	{
+		throw_if_invalid();
+
 		const auto type_erased_parser_and_validator =
 		    [parser_and_validator](const std::string_view env_value) -> std::any {
 			static_assert(std::is_convertible_v<decltype(parser_and_validator(env_value)), T>,
@@ -439,6 +461,7 @@ class prefix {
 	std::string m_prefix_name;
 	int m_edit_distance_cutoff;
 	std::vector<detail::variable_data> m_registered_vars;
+	bool m_invalidated = false;
 
 	template <typename Prefix>
 	friend class parsed_and_validated_prefix;

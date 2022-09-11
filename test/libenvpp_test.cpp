@@ -818,4 +818,50 @@ TEST_CASE("Empty prefix can be validated", "[libenvpp]")
 	CHECK(parsed_and_validated_pre.ok());
 }
 
+TEST_CASE("Prefix can be moved", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto int_var = pre.register_required_variable<int>("INT");
+	auto moved_pre = std::move(pre);
+	CHECK_THROWS_AS(pre.register_variable<float>("FLOAT"), invalidated_prefix);
+	const auto float_var = moved_pre.register_required_variable<float>("FLOAT");
+	moved_pre.set_for_testing(int_var, 7);
+	pre = std::move(moved_pre);
+	CHECK_THROWS_AS(moved_pre.register_variable<std::string>("STRING"), invalidated_prefix);
+	pre.set_for_testing(float_var, 42.42f);
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	CHECK(parsed_and_validated_pre.ok());
+	CHECK(parsed_and_validated_pre.get(int_var) == 7);
+	CHECK(parsed_and_validated_pre.get(float_var) == 42.42f);
+}
+
+TEST_CASE("Invalidated prefix throws", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto var_id = pre.register_variable<int>("INT");
+	pre.set_for_testing(var_id, 7);
+
+	SECTION("Parsing prefix invalidates it") { auto parsed_and_validated_pre = pre.parse_and_validate(); }
+	SECTION("Moving prefix invalidates it")
+	{
+		SECTION("Move construction") { auto moved_pre = std::move(pre); }
+		SECTION("Move assignment")
+		{
+			auto moved_pre = std::move(pre);
+			pre = std::move(moved_pre);
+			moved_pre = std::move(pre);
+		}
+	}
+
+	CHECK_THROWS_AS(pre.register_variable<int>("INT2"), invalidated_prefix);
+	CHECK_THROWS_AS(pre.register_required_variable<int>("INT2"), invalidated_prefix);
+	CHECK_THROWS_AS(pre.register_range<int>("INT2", 0, 1), invalidated_prefix);
+	CHECK_THROWS_AS(pre.register_required_range<int>("INT2", 0, 1), invalidated_prefix);
+	CHECK_THROWS_AS(pre.register_option<int>("INT2", {0}), invalidated_prefix);
+	CHECK_THROWS_AS(pre.register_required_option<int>("INT2", {0}), invalidated_prefix);
+	CHECK_THROWS_AS(pre.set_for_testing(var_id, 4), invalidated_prefix);
+	CHECK_THROWS_AS(pre.parse_and_validate(), invalidated_prefix);
+	CHECK_THROWS_AS(pre.help_message(), invalidated_prefix);
+}
+
 } // namespace env
