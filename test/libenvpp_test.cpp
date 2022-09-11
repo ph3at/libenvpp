@@ -394,14 +394,26 @@ TEST_CASE("Set for testing", "[libenvpp]")
 TEST_CASE("Help message", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
-	[[maybe_unused]] const auto int_id = pre.register_variable<int>("INTEGER");
-	[[maybe_unused]] const auto float_id = pre.register_required_variable<float>("FLOAT");
-	const auto pre_help_message = pre.help_message();
-	auto parsed_pre = pre.parse_and_validate();
-	const auto parsed_help_message = parsed_pre.help_message();
-	CHECK_THAT(pre_help_message, Equals(parsed_help_message));
-	CHECK_THAT(pre_help_message, ContainsSubstring("LIBENVPP_TESTING") && ContainsSubstring("2")
-	                                 && ContainsSubstring("INTEGER optional") && ContainsSubstring("FLOAT required"));
+
+	SECTION("Empty environment")
+	{
+		const auto help_message = pre.help_message();
+		CHECK_THAT(help_message,
+		           ContainsSubstring("LIBENVPP_TESTING") && ContainsSubstring("no supported environment variables"));
+	}
+
+	SECTION("Non-empty environment")
+	{
+		[[maybe_unused]] const auto int_id = pre.register_variable<int>("INTEGER");
+		[[maybe_unused]] const auto float_id = pre.register_required_variable<float>("FLOAT");
+		const auto pre_help_message = pre.help_message();
+		auto parsed_pre = pre.parse_and_validate();
+		const auto parsed_help_message = parsed_pre.help_message();
+		CHECK_THAT(pre_help_message, Equals(parsed_help_message));
+		CHECK_THAT(pre_help_message, ContainsSubstring("LIBENVPP_TESTING") && ContainsSubstring("2")
+		                                 && ContainsSubstring("INTEGER optional")
+		                                 && ContainsSubstring("FLOAT required"));
+	}
 }
 
 TEST_CASE("Parser errors", "[libenvpp]")
