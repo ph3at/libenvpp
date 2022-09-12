@@ -21,6 +21,7 @@ if(NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
 endif()
 
 option(LIBENVPP_TESTS "Build libenvpp tests." ${LIBENVPP_MASTER_PROJECT})
+option(LIBENVPP_EXAMPLES "Build libenvpp examples." ${LIBENVPP_MASTER_PROJECT})
 option(LIBENVPP_CHECKS "Enable additional runtime checks in release (always on in debug)." OFF)
 
 include(cmake/libenvpp_mt_utils.cmake)
@@ -99,4 +100,15 @@ if(LIBENVPP_TESTS)
 	endif()
 
 	catch_discover_tests(libenvpp_tests)
+endif()
+
+# Examples.
+if(LIBENVPP_EXAMPLES)
+	file(GLOB_RECURSE LIBENVPP_EXAMPLES_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp")
+	foreach(LIBENVPP_EXAMPLE_SOURCE ${LIBENVPP_EXAMPLES_SOURCES})
+		get_filename_component(LIBENVPP_EXAMPLE_TARGET ${LIBENVPP_EXAMPLE_SOURCE} NAME_WE)
+		add_executable(${LIBENVPP_EXAMPLE_TARGET} "${LIBENVPP_EXAMPLE_SOURCE}")
+		libenvpp_set_compiler_parameters(${LIBENVPP_EXAMPLE_TARGET})
+		target_link_libraries(${LIBENVPP_EXAMPLE_TARGET} PRIVATE libenvpp)
+	endforeach()
 endif()
