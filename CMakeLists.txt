@@ -89,7 +89,6 @@ if(LIBENVPP_TESTS)
 		"test/libenvpp_env_test.cpp"
 		"test/libenvpp_parser_test.cpp"
 		"test/libenvpp_test.cpp"
-		"test/libenvpp_util_test.cpp"
 	)
 	libenvpp_set_compiler_parameters(libenvpp_tests)
 	target_link_libraries(libenvpp_tests PRIVATE libenvpp Catch2::Catch2WithMain)
