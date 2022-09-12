@@ -147,8 +147,8 @@ class parsed_and_validated_prefix {
 		}
 	}
 
-	template <typename T, bool IsRequired>
-	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, const T& default_value) const
+	template <typename T, bool IsRequired, typename U = T>
+	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, const U& default_value) const
 	{
 		static_assert(!IsRequired, "Default values are not supported on required variables");
 
