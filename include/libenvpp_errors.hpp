@@ -61,6 +61,12 @@ class invalidated_prefix : public std::runtime_error {
 	invalidated_prefix(const std::string_view message) : std::runtime_error(std::string(message)) {}
 };
 
+class invalid_prefix : public std::runtime_error {
+  public:
+	invalid_prefix() = delete;
+	invalid_prefix(const std::string_view message) : std::runtime_error(std::string(message)) {}
+};
+
 class error {
   public:
 	error() = delete;

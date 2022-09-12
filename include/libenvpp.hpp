@@ -351,7 +351,12 @@ class prefix {
   public:
 	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 3)
 	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
-	{}
+	{
+		if (m_prefix_name.empty()) {
+			throw invalid_prefix{"Prefix name must not be empty"};
+		}
+	}
+
 	prefix(const prefix&) = delete;
 	prefix(prefix&& other) noexcept { *this = std::move(other); }
 

@@ -811,6 +811,11 @@ TEST_CASE_METHOD(int_var_fixture, "Variable IDs can only be copied", "[libenvpp]
 	CHECK(*int_id_copy_assigned_val == 42);
 }
 
+TEST_CASE("Empty prefix name throws", "[libenvpp]")
+{
+	CHECK_THROWS_AS(env::prefix(""), invalid_prefix);
+}
+
 TEST_CASE("Empty prefix can be validated", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
