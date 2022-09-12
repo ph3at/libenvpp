@@ -1,15 +1,16 @@
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 
 #include <libenvpp.hpp>
 
 namespace env {
 template <>
-struct default_validator<int> {
-	void operator()(const int value) const
+struct default_validator<std::filesystem::path> {
+	void operator()(const std::filesystem::path& path) const
 	{
-		if (value == 42) {
-			throw validation_error{"Value 42 is not allowed"};
+		if (!std::filesystem::exists(path)) {
+			throw validation_error{path.string() + " path does not exist"};
 		}
 	}
 };
@@ -19,15 +20,19 @@ int main()
 {
 	auto pre = env::prefix("CUSTOM_VALIDATOR");
 
-	const auto number_id = pre.register_required_variable<int>("NUMBER");
+	const auto path_id = pre.register_variable<std::filesystem::path>("PATH");
 
 	const auto parsed_and_validated_pre = pre.parse_and_validate();
 
 	if (parsed_and_validated_pre.ok()) {
-		const auto number = parsed_and_validated_pre.get(number_id);
+		auto path = parsed_and_validated_pre.get(path_id);
 
-		std::cout << "Number that is not the answer to the ultimate question of life, the universe, and everything: "
-		          << number << std::endl;
+		if (!path.has_value()) {
+			path = std::filesystem::path{"logpath"};
+			std::filesystem::create_directory(*path);
+		}
+
+		std::cout << "Existing logging directory: " << *path << std::endl;
 	} else {
 		std::cout << parsed_and_validated_pre.warning_message() << std::endl;
 		std::cout << parsed_and_validated_pre.error_message() << std::endl;
