@@ -232,7 +232,7 @@ class parsed_and_validated_prefix {
 					m_errors.emplace_back(
 					    id, var.m_name,
 					    fmt::format("Range error for environment variable '{}': {}", var.m_name, e.what()));
-				} catch (const unrecognized_option& e) {
+				} catch (const option_error& e) {
 					m_errors.emplace_back(
 					    id, var.m_name,
 					    fmt::format("Option error for environment variable '{}': {}", var.m_name, e.what()));
@@ -507,7 +507,7 @@ class prefix {
 			const auto value = default_parser<T>{}(str);
 			default_validator<T>{}(value);
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
-				throw unrecognized_option{fmt::format("Unrecognized option '{}'", str)};
+				throw option_error{fmt::format("Unrecognized option '{}'", str)};
 			}
 			return value;
 		};
