@@ -232,6 +232,10 @@ class parsed_and_validated_prefix {
 					m_errors.emplace_back(
 					    id, var.m_name,
 					    fmt::format("Range error for environment variable '{}': {}", var.m_name, e.what()));
+				} catch (const unrecognized_option& e) {
+					m_errors.emplace_back(
+					    id, var.m_name,
+					    fmt::format("Option error for environment variable '{}': {}", var.m_name, e.what()));
 				} catch (const std::exception& e) {
 					m_errors.emplace_back(id, var.m_name,
 					                      fmt::format("Failed to parse or validate environment variable '{}' with: {}",
@@ -499,12 +503,11 @@ class prefix {
 		if (options_set.size() != options.size()) {
 			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", name)};
 		}
-		const auto parser_and_validator = [name = std::string(name),
-		                                   options = std::move(options_set)](const std::string_view str) {
+		const auto parser_and_validator = [options = std::move(options_set)](const std::string_view str) {
 			const auto value = default_parser<T>{}(str);
 			default_validator<T>{}(value);
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
-				throw unrecognized_option{fmt::format("Unrecognized option '{}' for '{}'", str, name)};
+				throw unrecognized_option{fmt::format("Unrecognized option '{}'", str)};
 			}
 			return value;
 		};

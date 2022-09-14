@@ -698,8 +698,8 @@ TEST_CASE_METHOD(int_var_fixture, "Invalid option environment variables", "[libe
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring("Unrecognized option") && ContainsSubstring(prefix_name)
-		               && ContainsSubstring("INT") && ContainsSubstring("42"));
+		           ContainsSubstring("Option error") && ContainsSubstring("Unrecognized option")
+		               && ContainsSubstring(prefix_name) && ContainsSubstring("INT") && ContainsSubstring("42"));
 	}
 
 	SECTION("Invalid required option")
@@ -711,8 +711,8 @@ TEST_CASE_METHOD(int_var_fixture, "Invalid option environment variables", "[libe
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring("Unrecognized option") && ContainsSubstring(prefix_name)
-		               && ContainsSubstring("INT") && ContainsSubstring("42"));
+		           ContainsSubstring("Option error") && ContainsSubstring("Unrecognized option")
+		               && ContainsSubstring(prefix_name) && ContainsSubstring("INT") && ContainsSubstring("42"));
 	}
 }
 
