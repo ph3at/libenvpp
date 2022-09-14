@@ -65,7 +65,6 @@ set(LIBENVPP_SOURCES
 	"source/levenshtein.cpp"
 	"source/libenvpp_env_unix.cpp"
 	"source/libenvpp_env_windows.cpp"
-	"source/libenvpp.cpp"
 )
 
 # Add includes to library so they show up in IDEs.
