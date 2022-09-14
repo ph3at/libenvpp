@@ -209,3 +209,31 @@ _Note:_ The parser and validator function passed to `register_[required]_variabl
 #### Custom Variable Parser and Validator - Code
 
 For the full example see [examples/libenvpp_custom_parser_and_validator_example.cpp](examples/libenvpp_custom_parser_and_validator_example.cpp).
+
+### Range Variables
+
+Because it is a frequent use-case that a value must be within a given range, environment variables can be registered with `register_range` which additionally takes a minimum and maximum value, and validates that the parsed value is within the given range. The minimum and maximum values are both **inclusive**. For example:
+
+```cpp
+auto pre = env::prefix("RANGE");
+const auto num_threads_id = pre.register_range<unsigned int>("NUM_THREADS", 1, std::thread::hardware_concurrency());
+const auto parsed_and_validated_pre = pre.parse_and_validate();
+
+if (parsed_and_validated_pre.ok()) {
+    const auto num_threads = parsed_and_validated_pre.get_or(num_threads_id, std::thread::hardware_concurrency());
+    std::cout << "Number of threads: " << num_threads << std::endl;
+} else {
+    std::cout << parsed_and_validated_pre.warning_message() << std::endl;
+    std::cout << parsed_and_validated_pre.error_message() << std::endl;
+}
+```
+
+This will enforce that the specified number of threads is between 1 and the maximum that the system this is run on supports, inclusive.
+
+_Note:_ Range variables, just like normal variables, can be optional or required. And the type is parsed with `default_parser` and validated with `default_validator`. It is not possible, however, to specify a custom parser and validator function for a range, if this is desired, a normal variable should be used and the range check done manually as part of the validation.
+
+_Note:_ When using `get_or` to set a default value for an optional range, the range requirement is **not** enforced on the default. This can be used for special case handling if desired.
+
+#### Range Variables - Code
+
+For the complete code see [examples/libenvpp_range_example.cpp](examples/libenvpp_range_example.cpp).
