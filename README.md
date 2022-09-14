@@ -237,3 +237,44 @@ _Note:_ When using `get_or` to set a default value for an optional range, the ra
 #### Range Variables - Code
 
 For the complete code see [examples/libenvpp_range_example.cpp](examples/libenvpp_range_example.cpp).
+
+### Option Variables
+
+Another frequent use-case is that a value is one of a given set of options. For this an environment variable can be registered with `register_[required]_option`, which takes a list of valid options, against which the value is checked. For example:
+
+```cpp
+enum class option {
+    first_choice,
+    second_choice,
+    third_choice,
+    default_choice,
+};
+
+int main()
+{
+    auto pre = env::prefix("OPTION");
+
+    const auto option_id =
+        pre.register_option<option>("CHOICE", {option::first_choice, option::second_choice, option::third_choice});
+
+    const auto parsed_and_validated_pre = pre.parse_and_validate();
+
+    if (parsed_and_validated_pre.ok()) {
+        const auto opt = parsed_and_validated_pre.get_or(option_id, option::default_choice);
+    }
+}
+```
+
+This registers an `enum class` option, where only a subset of all possible values is considered valid, so that `option::default_choice` can be used as the value if the variable is not set.
+
+_Note:_ The list of options provided when registering must not be empty, and must not contain duplicates.
+
+_Note:_ As with range variables, the default value given with `get_or` is not enforced to be within the list of options given when registering the option variable.
+
+_Note:_ Since C++ does not provide any way to automatically parse `enum class` types from string, the example above additionally requires a specialized `default_parser` for the `enum class` type.
+
+_Note:_ Options are mostly intended to be used with `enum class` types, but this is in no way a requirement. Any type can be used as an option, and `enum class` types can also just be normal environment variables.
+
+#### Option Variables - Code
+
+For the full code, including the parser for the enum class, see [examples/libenvpp_option_example.cpp](examples/libenvpp_option_example.cpp).

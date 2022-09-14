@@ -9,6 +9,7 @@ enum class option {
 	first_choice,
 	second_choice,
 	third_choice,
+	default_choice,
 };
 
 namespace env {
@@ -24,6 +25,8 @@ struct default_parser<option> {
 			opt = option::second_choice;
 		} else if (str == "third_choice") {
 			opt = option::third_choice;
+		} else if (str == "default_choice") {
+			opt = option::default_choice;
 		} else {
 			throw parser_error{std::string("Unable to parse '") + std::string(str) + "'"};
 		}
@@ -37,13 +40,13 @@ int main()
 {
 	auto pre = env::prefix("OPTION");
 
-	const auto option_id = pre.register_required_option<option>(
-	    "CHOICE", {option::first_choice, option::second_choice, option::third_choice});
+	const auto option_id =
+	    pre.register_option<option>("CHOICE", {option::first_choice, option::second_choice, option::third_choice});
 
 	const auto parsed_and_validated_pre = pre.parse_and_validate();
 
 	if (parsed_and_validated_pre.ok()) {
-		const auto opt = parsed_and_validated_pre.get(option_id);
+		const auto opt = parsed_and_validated_pre.get_or(option_id, option::default_choice);
 
 		std::cout << "Chosen: ";
 		switch (opt) {
@@ -55,6 +58,9 @@ int main()
 			break;
 		case option::third_choice:
 			std::cout << "third_choice" << std::endl;
+			break;
+		case option::default_choice:
+			std::cout << "default_choice" << std::endl;
 			break;
 		}
 	} else {
