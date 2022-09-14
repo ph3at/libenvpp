@@ -8,6 +8,7 @@
 - Automatic parsing of built-in types
 - User-defined types parsable with user-defined parser
 - Optional user-defined validation
+- Convenience range/option environment variable type
 - Parsing/validating possible per type, or per environment variable
 - Typo detection based on edit-distance
 - Unused environment variable detection
