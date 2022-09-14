@@ -106,3 +106,42 @@ int main()
     return EXIT_SUCCESS;
 }
 ```
+
+### Custom Type Parser
+
+To provide a parser for a user-defined type it is necessary to specialize the template struct `default_parser` for the specific type that should be parsed and provide a call operator that takes a `std::string_view` and returns the parsed type, for example:
+
+```cpp
+struct program_data {
+    int number;
+    float percent;
+};
+
+namespace env {
+template <>
+struct default_parser<program_data> {
+    program_data operator()(const std::string_view str) const
+    {
+        const auto split_str = split(str, ',');
+        if (split_str.size() != 2) {
+            // Report an error if the input does not have the expected format
+            throw parser_error{"Expected 2 comma delimited values"};
+        }
+
+        auto parsed_data = program_data{};
+
+        // Delegate parsing of primitive types to the default_parser
+        parsed_data.number = default_parser<int>{}(split_str[0]);
+        parsed_data.percent = default_parser<float>{}(split_str[1]);
+
+        return parsed_data;
+    }
+};
+} // namespace env
+```
+
+_Note:_ The `default_parser` already supports primitive types (and everything that can be constructed from string), so parsing should be delegated to the existing implementation whenever possible.
+
+#### Custom Type Parser - Code
+
+For the entire code see [examples/libenvpp_custom_parser_example.cpp](examples/libenvpp_custom_parser_example.cpp).

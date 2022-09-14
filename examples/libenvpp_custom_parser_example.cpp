@@ -7,7 +7,7 @@
 
 #include <libenvpp.hpp>
 
-static std::vector<std::string> split(const std::string_view str, const char delimiter = ',')
+static std::vector<std::string> split(const std::string_view str, const char delimiter)
 {
 	auto result = std::vector<std::string>{};
 	auto sstream = std::istringstream(std::string(str));
@@ -28,7 +28,7 @@ template <>
 struct default_parser<program_data> {
 	program_data operator()(const std::string_view str) const
 	{
-		const auto split_str = split(str);
+		const auto split_str = split(str, ',');
 		if (split_str.size() != 2) {
 			// Report an error if the input does not have the expected format
 			throw parser_error{"Expected 2 comma delimited values"};
