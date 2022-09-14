@@ -36,7 +36,7 @@ const auto log_path_id = pre.register_variable<std::filesystem::path>("LOG_FILE_
 const auto num_threads_id = pre.register_variable<unsigned int>("NUM_THREADS");
 ```
 
-After having registered all variables with the corresponding prefix it can be parsed and evaluated, which will retrieve the values from the environment and parse them into the type specified when registering:
+After having registered all variables with the corresponding prefix it can be parsed and validated, which will retrieve the values from the environment and parse them into the type specified when registering:
 
 ```cpp
 const auto parsed_and_validated_pre = pre.parse_and_validate();
