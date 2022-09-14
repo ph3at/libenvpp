@@ -1,5 +1,17 @@
 # libenvpp - Modern C++ Library for Handling Environment Variables
 
+## Features
+
+- Platform independent
+- Type safe parsing of environment variables
+- Support for required and optional environment variables, with specifiable default value
+- Automatic parsing of built-in types
+- User-defined types parsable with user-defined parser
+- Optional user-defined validation
+- Parsing/validating possible per type, or per environment variable
+- Typo detection based on edit-distance
+- Unused environment variable detection
+
 ## Usage
 
 To use the library the first step would be to include the header:
