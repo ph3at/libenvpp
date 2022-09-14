@@ -169,3 +169,43 @@ The validator example above shows a validator for the type `std::filesystem::pat
 #### Custom Type Validator - Code
 
 For the full example see [examples/libenvpp_custom_validator_example.cpp](examples/libenvpp_custom_validator_example.cpp).
+
+### Custom Variable Parser and Validator
+
+If parsing/validator should be done in a specific way for a specific variable only, and not for every variable of the same type, it is possible to specify a parser and validator function when registering a variable:
+
+```cpp
+std::filesystem::path path_parser_and_validator(const std::string_view str)
+{
+    const auto log_path = std::filesystem::path(str);
+
+    if (!std::filesystem::exists(log_path)) {
+        if (!std::filesystem::create_directory(log_path)) {
+            throw env::validation_error{"Unable to create log directory"};
+        }
+    } else if (!std::filesystem::is_directory(log_path)) {
+        throw env::validation_error{"Log path is not a directory"};
+    }
+
+    return log_path;
+}
+
+int main()
+{
+    auto pre = env::prefix("CUSTOM_PARSER_AND_VALIDATOR");
+
+    const auto path_id = pre.register_required_variable<std::filesystem::path>("LOG_PATH", path_parser_and_validator);
+
+    /*...*/
+}
+```
+
+For example, the parser and validator function above will make sure that the log path specified by the environment variable points to a directory, and will even create it if it doesn't exist. Errors are reported by throwing `env::parser_error` or `env::validation_error`.
+
+_Note:_ When specifying a custom parser and validator function, the `default_parser` and `default_validator` for the given type are not invoked automatically, however delegating to them is still possible and should be done if appropriate.
+
+_Note:_ The parser and validator function passed to `register_[required]_variable` can be any callable type, be it function, lambda, or functor.
+
+#### Custom Variable Parser and Validator - Code
+
+For the full example see [examples/libenvpp_custom_parser_and_validator_example.cpp](examples/libenvpp_custom_parser_and_validator_example.cpp).
