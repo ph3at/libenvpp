@@ -145,3 +145,27 @@ _Note:_ The `default_parser` already supports primitive types (and everything th
 #### Custom Type Parser - Code
 
 For the entire code see [examples/libenvpp_custom_parser_example.cpp](examples/libenvpp_custom_parser_example.cpp).
+
+### Custom Type Validator
+
+Similarly to the `default_parser` there is also a `default_validator` which can be specialized for any type that should be validated. The non-specialized implementation of `default_validator` does nothing, as everything that can be parsed is considered valid by default. When specializing `default_validator` for a type the `struct` must contain a call operator that takes the parsed type and returns `void`. Validation errors should be reported by throwing a `validation_error`:
+
+```cpp
+namespace env {
+template <>
+struct default_validator<std::filesystem::path> {
+    void operator()(const std::filesystem::path& path) const
+    {
+        if (!std::filesystem::exists(path)) {
+            throw validation_error{path.string() + " path does not exist"};
+        }
+    }
+};
+} // namespace env
+```
+
+The validator example above shows a validator for the type `std::filesystem::path` which requires that environment variables of that type must exist on the filesystem, otherwise the specified environment variable is considered invalid, even if the string was a valid path.
+
+#### Custom Type Validator - Code
+
+For the full example see [examples/libenvpp_custom_validator_example.cpp](examples/libenvpp_custom_validator_example.cpp).
