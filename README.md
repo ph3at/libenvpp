@@ -279,9 +279,9 @@ _Note:_ Options are mostly intended to be used with `enum class` types, but this
 
 For the full code, including the parser for the enum class, see [examples/libenvpp_option_example.cpp](examples/libenvpp_option_example.cpp).
 
-### Error Handling
+## Error Handling
 
-#### Help Message
+### Help Message
 
 After having registered all variables with a prefix it is possible to generate a formatted help message for a specific prefix. This can be done by calling `help_message` on either a prefix, or a validated prefix. For example:
 
@@ -302,7 +302,7 @@ Prefix 'MYPROG' supports the following 2 environment variable(s):
     'NUM_THREADS' required
 ```
 
-#### Warnings and Errors
+### Warnings and Errors
 
 If anything goes wrong when parsing and validating a prefix this can be queried through the following functions:
 
@@ -314,7 +314,7 @@ If anything goes wrong when parsing and validating a prefix this can be queried 
 | `warnings()`        | `std::vector<env::error>` containing all warnings              |
 | `errors()`          | `std::vector<env::error>` containing all errors                |
 
-##### `error` Type
+#### `error` Type
 
 The `env::error` type is used to give more information on warnings and errors. The type supports:
 
@@ -324,14 +324,14 @@ The `env::error` type is used to give more information on warnings and errors. T
 | `get_name()` | `std::string` containing the name of the variable that caused the warning/error.                                                            |
 | `what()`     | `std::string` containing the warning/error message.                                                                                         |
 
-##### Warnings
+#### Warnings
 
 The following situations will generate a warning:
 
 - An optional variable is not set, but a similar (within edit distance configured for the prefix) unused variable is.
 - An unused variable with the same prefix is set.
 
-##### Errors
+#### Errors
 
 The following situations will generate an error:
 
@@ -343,6 +343,6 @@ The following situations will generate an error:
 - A required variable is not set, but a similar (within edit distance configured for the prefix) unused variable is.
 - A required variable is not set.
 
-#### Warnings and Errors - Code
+### Warnings and Errors - Code
 
 For an example of how the warning/error handling functions can be used, see [examples/libenvpp_error_handling_example.cpp](examples/libenvpp_error_handling_example.cpp).
