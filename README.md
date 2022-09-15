@@ -1,5 +1,28 @@
 # libenvpp - Modern C++ Library for Handling Environment Variables
 
+- [Features](#features)
+- [Usage](#usage)
+  - [Simple Example](#simple-example)
+    - [Simple Example - Code](#simple-example---code)
+    - [Simple Example - Output](#simple-example---output)
+  - [Custom Type Parser](#custom-type-parser)
+    - [Custom Type Parser - Code](#custom-type-parser---code)
+  - [Custom Type Validator](#custom-type-validator)
+    - [Custom Type Validator - Code](#custom-type-validator---code)
+  - [Custom Variable Parser and Validator](#custom-variable-parser-and-validator)
+    - [Custom Variable Parser and Validator - Code](#custom-variable-parser-and-validator---code)
+  - [Range Variables](#range-variables)
+    - [Range Variables - Code](#range-variables---code)
+  - [Option Variables](#option-variables)
+    - [Option Variables - Code](#option-variables---code)
+- [Error Handling](#error-handling)
+  - [Help Message](#help-message)
+  - [Warnings and Errors](#warnings-and-errors)
+    - [`error` Type](#error-type)
+    - [Warnings](#warnings)
+    - [Errors](#errors)
+  - [Warnings and Errors - Code](#warnings-and-errors---code)
+
 ## Features
 
 - Platform independent
