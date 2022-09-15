@@ -298,8 +298,8 @@ will output:
 
 ```text
 Prefix 'MYPROG' supports the following 2 environment variable(s):
-    'LOG_FILE_PATH' optional
-    'NUM_THREADS' required
+    'MYPROG_LOG_FILE_PATH' optional
+    'MYPROG_NUM_THREADS' required
 ```
 
 ### Warnings and Errors

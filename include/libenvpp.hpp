@@ -209,7 +209,7 @@ class parsed_and_validated_prefix {
 
 		for (std::size_t id = 0; id < m_prefix.m_registered_vars.size(); ++id) {
 			auto& var = m_prefix.m_registered_vars[id];
-			const auto var_name = get_full_env_var_name(id);
+			const auto var_name = m_prefix.get_full_env_var_name(id);
 			const auto var_value = pop_from_environment(var_name, environment);
 			if (var.m_value.has_value()) {
 				// Skip variables set for testing, but consume their environment value if available.
@@ -223,54 +223,53 @@ class parsed_and_validated_prefix {
 				} catch (const parser_error& e) {
 					m_errors.emplace_back(
 					    id, var.m_name,
-					    fmt::format("Parser error for environment variable '{}': {}", var.m_name, e.what()));
+					    fmt::format("Parser error for environment variable '{}': {}", var_name, e.what()));
 				} catch (const validation_error& e) {
 					m_errors.emplace_back(
-					    id, var.m_name,
-					    fmt::format("Validation error for environment variable '{}': {}", var.m_name, e.what()));
+					    id, var_name,
+					    fmt::format("Validation error for environment variable '{}': {}", var_name, e.what()));
 				} catch (const range_error& e) {
 					m_errors.emplace_back(
-					    id, var.m_name,
-					    fmt::format("Range error for environment variable '{}': {}", var.m_name, e.what()));
+					    id, var_name, fmt::format("Range error for environment variable '{}': {}", var_name, e.what()));
 				} catch (const option_error& e) {
 					m_errors.emplace_back(
-					    id, var.m_name,
-					    fmt::format("Option error for environment variable '{}': {}", var.m_name, e.what()));
+					    id, var_name,
+					    fmt::format("Option error for environment variable '{}': {}", var_name, e.what()));
 				} catch (const std::exception& e) {
-					m_errors.emplace_back(id, var.m_name,
+					m_errors.emplace_back(id, var_name,
 					                      fmt::format("Failed to parse or validate environment variable '{}' with: {}",
-					                                  var.m_name, e.what()));
+					                                  var_name, e.what()));
 				} catch (...) {
 					m_errors.emplace_back(
-					    id, var.m_name,
+					    id, var_name,
 					    fmt::format("Failed to parse or validate environment variable '{}' with unknown error",
-					                var.m_name));
+					                var_name));
 				}
 			}
 		}
 
 		for (const auto id : unparsed_env_vars) {
 			auto& var = m_prefix.m_registered_vars[id];
-			const auto var_name = get_full_env_var_name(id);
+			const auto var_name = m_prefix.get_full_env_var_name(id);
 			const auto similar_var = find_similar_env_var(var_name, environment);
 			if (similar_var.has_value()) {
 				const auto msg = fmt::format("Unrecognized environment variable '{}' set, did you mean '{}'?",
 				                             *similar_var, var_name);
 				pop_from_environment(*similar_var, environment);
 				if (var.m_is_required) {
-					m_errors.emplace_back(id, var.m_name, msg);
+					m_errors.emplace_back(id, var_name, msg);
 				} else {
-					m_warnings.emplace_back(id, var.m_name, msg);
+					m_warnings.emplace_back(id, var_name, msg);
 				}
 			} else if (var.m_is_required) {
-				m_errors.emplace_back(id, var.m_name, fmt::format("Environment variable '{}' not set", var.m_name));
+				m_errors.emplace_back(id, var_name, fmt::format("Environment variable '{}' not set", var_name));
 			}
 		}
 
 		const auto unused_variables = find_unused_env_vars(environment);
 
 		for (const auto& unused_var : unused_variables) {
-			m_warnings.emplace_back(-1, "",
+			m_warnings.emplace_back(-1, unused_var,
 			                        fmt::format("Prefix environment variable '{}' specified but unused", unused_var));
 		}
 	}
@@ -299,11 +298,6 @@ class parsed_and_validated_prefix {
 		const auto [_, val] = *var_it;
 		environment.erase(var_it);
 		return val;
-	}
-
-	[[nodiscard]] std::string get_full_env_var_name(const std::size_t var_id) const
-	{
-		return m_prefix.m_prefix_name + "_" + m_prefix.m_registered_vars[var_id].m_name;
 	}
 
 	[[nodiscard]] std::optional<std::string>
@@ -441,7 +435,8 @@ class prefix {
 		                       m_registered_vars.size());
 		for (std::size_t i = 0; i < m_registered_vars.size(); ++i) {
 			const auto& var = m_registered_vars[i];
-			msg += fmt::format("\t'{}' {}{}", var.m_name, var.m_is_required ? "required" : "optional",
+			const auto var_name = get_full_env_var_name(i);
+			msg += fmt::format("\t'{}' {}{}", var_name, var.m_is_required ? "required" : "optional",
 			                   i + 1 < m_registered_vars.size() ? "\n" : "");
 		}
 		return msg;
@@ -449,6 +444,16 @@ class prefix {
 
   private:
 	prefix() = default;
+
+	[[nodiscard]] std::string get_full_env_var_name(const std::size_t var_id) const
+	{
+		return get_full_env_var_name(m_registered_vars[var_id].m_name);
+	}
+
+	[[nodiscard]] std::string get_full_env_var_name(const std::string_view name) const
+	{
+		return m_prefix_name + "_" + std::string(name);
+	}
 
 	void throw_if_invalid() const
 	{
@@ -478,7 +483,8 @@ class prefix {
 	[[nodiscard]] auto registration_range_helper(const std::string_view name, const T min, const T max)
 	{
 		if (min > max) {
-			throw invalid_range{fmt::format("Invalid range [{}, {}], min must be less or equal to max", min, max)};
+			throw invalid_range{fmt::format("Invalid range [{}, {}] for '{}', min must be less or equal to max", min,
+			                                max, get_full_env_var_name(name))};
 		}
 
 		const auto parser_and_validator = [min, max](const std::string_view str) {
@@ -496,12 +502,12 @@ class prefix {
 	[[nodiscard]] auto registration_option_helper(const std::string_view name, const std::initializer_list<T> options)
 	{
 		if (options.size() == 0) {
-			throw empty_option{fmt::format("No options provided for '{}'", name)};
+			throw empty_option{fmt::format("No options provided for '{}'", get_full_env_var_name(name))};
 		}
 
 		const auto options_set = std::set(options.begin(), options.end());
 		if (options_set.size() != options.size()) {
-			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", name)};
+			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", get_full_env_var_name(name))};
 		}
 		const auto parser_and_validator = [options = std::move(options_set)](const std::string_view str) {
 			const auto value = default_parser<T>{}(str);

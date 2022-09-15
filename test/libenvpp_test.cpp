@@ -264,9 +264,9 @@ TEST_CASE("Unset environment variables", "[libenvpp]")
 		CHECK_FALSE(parsed_and_validated_pre.ok());
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
-		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
-		                                                         && ContainsSubstring(prefix_name)
-		                                                         && ContainsSubstring("'UNSET' not set"));
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		               && ContainsSubstring("'LIBENVPP_TESTING_UNSET' not set"));
 		CHECK_THROWS_AS(parsed_and_validated_pre.get(var_id), value_error);
 
 		// Should not compile
@@ -276,9 +276,9 @@ TEST_CASE("Unset environment variables", "[libenvpp]")
 
 TEST_CASE("Retrieving errors", "[libenvpp]")
 {
-	const auto prefix_name = "PREFIX";
+	const auto prefix_name = std::string("PREFIX");
 	auto pre = env::prefix(prefix_name);
-	const auto foo_name = "FOO";
+	const auto foo_name = std::string("FOO");
 	const auto foo_id = pre.register_required_variable<int>(foo_name);
 	auto parsed_pre = pre.parse_and_validate();
 	REQUIRE_FALSE(parsed_pre.ok());
@@ -286,7 +286,8 @@ TEST_CASE("Retrieving errors", "[libenvpp]")
 	SECTION("Formatted error message")
 	{
 		CHECK_THAT(parsed_pre.error_message(), ContainsSubstring("error") && ContainsSubstring(prefix_name)
-		                                           && ContainsSubstring(foo_name) && ContainsSubstring("not set"));
+		                                           && ContainsSubstring("'" + prefix_name + "_" + foo_name + "'")
+		                                           && ContainsSubstring("not set"));
 	}
 
 	SECTION("Relating error to ID")
@@ -304,7 +305,7 @@ TEST_CASE("Retrieving errors", "[libenvpp]")
 	{
 		for (const auto& err : parsed_pre.errors()) {
 			const auto err_name = err.get_name();
-			CHECK_THAT(err_name, Equals(foo_name));
+			CHECK_THAT(err_name, Equals(prefix_name + "_" + foo_name));
 		}
 	}
 }
@@ -362,7 +363,7 @@ TEST_CASE("Unused variable with same prefix", "[libenvpp]")
 		auto parsed_and_validated_pre = pre.parse_and_validate();
 		REQUIRE_FALSE(parsed_and_validated_pre.ok());
 
-		CHECK_THAT(parsed_and_validated_pre.warning_message(), ContainsSubstring("LIBENVPP_TESTING_FOO"));
+		CHECK_THAT(parsed_and_validated_pre.warning_message(), ContainsSubstring("'LIBENVPP_TESTING_FOO'"));
 	}
 
 	SECTION("Prefix is a substring, but not at the beginning")
@@ -411,8 +412,8 @@ TEST_CASE("Help message", "[libenvpp]")
 		const auto parsed_help_message = parsed_pre.help_message();
 		CHECK_THAT(pre_help_message, Equals(parsed_help_message));
 		CHECK_THAT(pre_help_message, ContainsSubstring("LIBENVPP_TESTING") && ContainsSubstring("2")
-		                                 && ContainsSubstring("'INTEGER' optional")
-		                                 && ContainsSubstring("'FLOAT' required"));
+		                                 && ContainsSubstring("'LIBENVPP_TESTING_INTEGER' optional")
+		                                 && ContainsSubstring("'LIBENVPP_TESTING_FLOAT' required"));
 	}
 }
 
@@ -430,8 +431,9 @@ TEST_CASE("Parser errors", "[libenvpp]")
 		CHECK_FALSE(parsed_and_validated_pre.ok());
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
-		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring(prefix_name) && ContainsSubstring("Parser error") && ContainsSubstring("ENV_VAR"));
+		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring(prefix_name)
+		                                                         && ContainsSubstring("Parser error")
+		                                                         && ContainsSubstring("'LIBENVPP_TESTING_ENV_VAR'"));
 	}
 
 	SECTION("User-defined type with specialized default parser")
@@ -442,8 +444,9 @@ TEST_CASE("Parser errors", "[libenvpp]")
 		CHECK_FALSE(parsed_and_validated_pre.ok());
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
-		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring(prefix_name) && ContainsSubstring("Parser error") && ContainsSubstring("ENV_VAR"));
+		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring(prefix_name)
+		                                                         && ContainsSubstring("Parser error")
+		                                                         && ContainsSubstring("'LIBENVPP_TESTING_ENV_VAR'"));
 	}
 
 	SECTION("User-defined type with custom parser")
@@ -457,7 +460,7 @@ TEST_CASE("Parser errors", "[libenvpp]")
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring(prefix_name) && ContainsSubstring("Parser error")
-		               && ContainsSubstring("Unparseable") && ContainsSubstring("ENV_VAR"));
+		               && ContainsSubstring("Unparseable") && ContainsSubstring("'LIBENVPP_TESTING_ENV_VAR'"));
 	}
 }
 
@@ -486,7 +489,7 @@ TEST_CASE("Validation errors", "[libenvpp]")
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring(prefix_name) && ContainsSubstring("Validation error")
-		               && ContainsSubstring("Unvalidatable") && ContainsSubstring("ENV_VAR"));
+		               && ContainsSubstring("Unvalidatable") && ContainsSubstring("'LIBENVPP_TESTING_ENV_VAR'"));
 	}
 
 	SECTION("User-defined type with custom validator")
@@ -500,7 +503,7 @@ TEST_CASE("Validation errors", "[libenvpp]")
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring(prefix_name) && ContainsSubstring("Validation error")
-		               && ContainsSubstring("Unvalidatable") && ContainsSubstring("ENV_VAR"));
+		               && ContainsSubstring("Unvalidatable") && ContainsSubstring("'LIBENVPP_TESTING_ENV_VAR'"));
 	}
 }
 
@@ -544,7 +547,9 @@ TEST_CASE("Invalid range registered", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	CHECK_THROWS_AS(pre.register_range<int>("INT", 200, 100), invalid_range);
+	CHECK_THROWS_WITH(pre.register_range<int>("INT", 200, 100), ContainsSubstring("'LIBENVPP_TESTING_INT'"));
 	CHECK_THROWS_AS(pre.register_required_range<int>("INT", 200, 100), invalid_range);
+	CHECK_THROWS_WITH(pre.register_required_range<int>("INT", 200, 100), ContainsSubstring("'LIBENVPP_TESTING_INT'"));
 }
 
 TEST_CASE_METHOD(int_var_fixture, "Invalid range environment variables", "[libenvpp]")
@@ -560,8 +565,9 @@ TEST_CASE_METHOD(int_var_fixture, "Invalid range environment variables", "[liben
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring("Range error") && ContainsSubstring(prefix_name) && ContainsSubstring("INT")
-		               && ContainsSubstring("42") && ContainsSubstring("[100, 200]"));
+		           ContainsSubstring("Range error") && ContainsSubstring(prefix_name)
+		               && ContainsSubstring("'LIBENVPP_TESTING_INT'") && ContainsSubstring("42")
+		               && ContainsSubstring("[100, 200]"));
 	}
 
 	SECTION("Invalid required range")
@@ -573,8 +579,9 @@ TEST_CASE_METHOD(int_var_fixture, "Invalid range environment variables", "[liben
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring("Range error") && ContainsSubstring(prefix_name) && ContainsSubstring("INT")
-		               && ContainsSubstring("42") && ContainsSubstring("[100, 200]"));
+		           ContainsSubstring("Range error") && ContainsSubstring(prefix_name)
+		               && ContainsSubstring("'LIBENVPP_TESTING_INT'") && ContainsSubstring("42")
+		               && ContainsSubstring("[100, 200]"));
 	}
 }
 
@@ -603,9 +610,9 @@ TEST_CASE("Unset range environment variables", "[libenvpp]")
 		CHECK_FALSE(parsed_and_validated_pre.ok());
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
-		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
-		                                                         && ContainsSubstring(prefix_name)
-		                                                         && ContainsSubstring("'UNSET' not set"));
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		               && ContainsSubstring("'LIBENVPP_TESTING_UNSET' not set"));
 	}
 }
 
@@ -675,14 +682,18 @@ TEST_CASE("Empty option", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	CHECK_THROWS_AS(pre.register_option<int>("INT", {}), empty_option);
+	CHECK_THROWS_WITH(pre.register_option<int>("INT", {}), ContainsSubstring("'LIBENVPP_TESTING_INT'"));
 	CHECK_THROWS_AS(pre.register_required_option<int>("INT", {}), empty_option);
+	CHECK_THROWS_WITH(pre.register_required_option<int>("INT", {}), ContainsSubstring("'LIBENVPP_TESTING_INT'"));
 }
 
 TEST_CASE("Duplicate option", "[libenvpp]")
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	CHECK_THROWS_AS(pre.register_option<int>("INT", {1, 1}), duplicate_option);
+	CHECK_THROWS_WITH(pre.register_option<int>("INT", {1, 1}), ContainsSubstring("'LIBENVPP_TESTING_INT'"));
 	CHECK_THROWS_AS(pre.register_required_option<int>("INT", {1, 1}), duplicate_option);
+	CHECK_THROWS_WITH(pre.register_required_option<int>("INT", {1, 1}), ContainsSubstring("'LIBENVPP_TESTING_INT'"));
 }
 
 TEST_CASE_METHOD(int_var_fixture, "Invalid option environment variables", "[libenvpp]")
@@ -699,7 +710,8 @@ TEST_CASE_METHOD(int_var_fixture, "Invalid option environment variables", "[libe
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring("Option error") && ContainsSubstring("Unrecognized option")
-		               && ContainsSubstring(prefix_name) && ContainsSubstring("INT") && ContainsSubstring("42"));
+		               && ContainsSubstring(prefix_name) && ContainsSubstring("'LIBENVPP_TESTING_INT'")
+		               && ContainsSubstring("42"));
 	}
 
 	SECTION("Invalid required option")
@@ -712,7 +724,8 @@ TEST_CASE_METHOD(int_var_fixture, "Invalid option environment variables", "[libe
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
 		           ContainsSubstring("Option error") && ContainsSubstring("Unrecognized option")
-		               && ContainsSubstring(prefix_name) && ContainsSubstring("INT") && ContainsSubstring("42"));
+		               && ContainsSubstring(prefix_name) && ContainsSubstring("'LIBENVPP_TESTING_INT'")
+		               && ContainsSubstring("42"));
 	}
 }
 
@@ -741,9 +754,9 @@ TEST_CASE("Unset option environment variables", "[libenvpp]")
 		CHECK_FALSE(parsed_and_validated_pre.ok());
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
-		CHECK_THAT(parsed_and_validated_pre.error_message(), ContainsSubstring("error")
-		                                                         && ContainsSubstring(prefix_name)
-		                                                         && ContainsSubstring("'UNSET' not set"));
+		CHECK_THAT(parsed_and_validated_pre.error_message(),
+		           ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		               && ContainsSubstring("'LIBENVPP_TESTING_UNSET' not set"));
 	}
 }
 
@@ -895,7 +908,7 @@ TEST_CASE("Parsed and validated prefix can be moved", "[libenvpp]")
 		CHECK_THAT(parsed_pre.warning_message(), ContainsSubstring("No warnings for prefix"));
 		CHECK(parsed_pre.errors().empty());
 		CHECK(parsed_pre.warnings().empty());
-		CHECK_THAT(parsed_pre.help_message(), ContainsSubstring("'ENV_VAR' optional"));
+		CHECK_THAT(parsed_pre.help_message(), ContainsSubstring("'LIBENVPP_TESTING_ENV_VAR' optional"));
 		CHECK(parsed_pre.get_or(int_var, 4) == 7);
 		CHECK(*parsed_pre.get(int_var) == 7);
 	};
