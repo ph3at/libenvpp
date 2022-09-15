@@ -109,7 +109,7 @@ int main()
 
 ### Custom Type Parser
 
-To provide a parser for a user-defined type it is necessary to specialize the template struct `default_parser` for the specific type that should be parsed and provide a call operator that takes a `std::string_view` and returns the parsed type, for example:
+To provide a parser for a user-defined type it is necessary to specialize the template struct `env::default_parser` for the specific type that should be parsed and provide a call operator that takes a `std::string_view` and returns the parsed type, for example:
 
 ```cpp
 struct program_data {
@@ -148,7 +148,7 @@ For the entire code see [examples/libenvpp_custom_parser_example.cpp](examples/l
 
 ### Custom Type Validator
 
-Similarly to the `default_parser` there is also a `default_validator` which can be specialized for any type that should be validated. The non-specialized implementation of `default_validator` does nothing, as everything that can be parsed is considered valid by default. When specializing `default_validator` for a type the `struct` must contain a call operator that takes the parsed type and returns `void`. Validation errors should be reported by throwing a `validation_error`:
+Similarly to the `env::default_parser` there is also an `env::default_validator` which can be specialized for any type that should be validated. The non-specialized implementation of `default_validator` does nothing, as everything that can be parsed is considered valid by default. When specializing `default_validator` for a type the `struct` must contain a call operator that takes the parsed type and returns `void`. Validation errors should be reported by throwing an `env::validation_error`:
 
 ```cpp
 namespace env {
