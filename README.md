@@ -278,3 +278,26 @@ _Note:_ Options are mostly intended to be used with `enum class` types, but this
 #### Option Variables - Code
 
 For the full code, including the parser for the enum class, see [examples/libenvpp_option_example.cpp](examples/libenvpp_option_example.cpp).
+
+### Error Handling
+
+#### Help Message
+
+After having registered all variables with a prefix it is possible to generate a formatted help message for a specific prefix. This can be done by calling `help_message` on either a prefix, or a validated prefix. For example:
+
+```cpp
+auto pre = env::prefix("MYPROG");
+
+const auto log_path_id = pre.register_variable<std::filesystem::path>("LOG_FILE_PATH");
+const auto num_threads_id = pre.register_required_variable<unsigned int>("NUM_THREADS");
+
+std::cout << pre.help_message() << std::endl;
+```
+
+will output:
+
+```text
+Prefix 'MYPROG' supports the following 2 environment variable(s):
+    'LOG_FILE_PATH' optional
+    'NUM_THREADS' required
+```
