@@ -134,14 +134,14 @@ int main()
 
 Running the example without having any environment variable set:
 
-```bash
+```console
 $ ./libenvpp_simple_usage_example
 Error  : Environment variable 'MYPROG_NUM_THREADS' not set
 ```
 
 Running the example with a typo:
 
-```bash
+```console
 $ MYPROG_LOG_FILEPATH=/var/log/file ./libenvpp_simple_usage_example
 Warning: Unrecognized environment variable 'MYPROG_LOG_FILEPATH' set, did you mean 'MYPROG_LOG_FILE_PATH'?
 Error  : Environment variable 'MYPROG_NUM_THREADS' not set
@@ -149,7 +149,7 @@ Error  : Environment variable 'MYPROG_NUM_THREADS' not set
 
 Running the example with only the required variable set:
 
-```bash
+```console
 $ MYPROG_NUM_THREADS=4 ./libenvpp_simple_usage_example
 Log path   : "/default/log/path"
 Num threads: 4
@@ -157,7 +157,7 @@ Num threads: 4
 
 Running the example with both variables set:
 
-```bash
+```console
 $ MYPROG_LOG_FILE_PATH=/var/log/file MYPROG_NUM_THREADS=4 ./libenvpp_simple_usage_example
 Log path   : "/var/log/file"
 Num threads: 4
