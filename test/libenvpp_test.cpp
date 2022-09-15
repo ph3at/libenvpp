@@ -4,7 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/matchers/catch_matchers_all.hpp>
 
 #include <libenvpp.hpp>
 #include <libenvpp_env.hpp>
@@ -13,6 +13,8 @@ namespace env {
 
 using Catch::Matchers::ContainsSubstring;
 using Catch::Matchers::Equals;
+using Catch::Matchers::IsEmpty;
+using Catch::Matchers::StartsWith;
 
 class int_var_fixture {
   public:
@@ -265,7 +267,7 @@ TEST_CASE("Unset environment variables", "[libenvpp]")
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		           StartsWith("Error") && ContainsSubstring(prefix_name)
 		               && ContainsSubstring("'LIBENVPP_TESTING_UNSET' not set"));
 		CHECK_THROWS_AS(parsed_and_validated_pre.get(var_id), value_error);
 
@@ -285,7 +287,7 @@ TEST_CASE("Retrieving errors", "[libenvpp]")
 
 	SECTION("Formatted error message")
 	{
-		CHECK_THAT(parsed_pre.error_message(), ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		CHECK_THAT(parsed_pre.error_message(), StartsWith("Error") && ContainsSubstring(prefix_name)
 		                                           && ContainsSubstring("'" + prefix_name + "_" + foo_name + "'")
 		                                           && ContainsSubstring("not set"));
 	}
@@ -320,7 +322,7 @@ TEST_CASE_METHOD(int_var_fixture, "Typo detection using edit distance", "[libenv
 		REQUIRE_FALSE(parsed_and_validated_pre.ok());
 
 		CHECK_THAT(parsed_and_validated_pre.warning_message(),
-		           ContainsSubstring("'LIBENVPP_TESTING_INT' set")
+		           StartsWith("Warning") && ContainsSubstring("'LIBENVPP_TESTING_INT' set")
 		               && ContainsSubstring("did you mean 'LIBENVPP_TESTING_HINT'"));
 	}
 
@@ -349,7 +351,7 @@ TEST_CASE("Typo detection does not trigger on already consumed variables", "[lib
 	REQUIRE_FALSE(parsed_and_validated_pre.ok());
 
 	CHECK_THAT(parsed_and_validated_pre.warning_message(),
-	           ContainsSubstring("'LIBENVPP_TESTING_FOU' set")
+	           StartsWith("Warning") && ContainsSubstring("'LIBENVPP_TESTING_FOU' set")
 	               && ContainsSubstring("did you mean 'LIBENVPP_TESTING_FUU'"));
 }
 
@@ -611,7 +613,7 @@ TEST_CASE("Unset range environment variables", "[libenvpp]")
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		           StartsWith("Error") && ContainsSubstring(prefix_name)
 		               && ContainsSubstring("'LIBENVPP_TESTING_UNSET' not set"));
 	}
 }
@@ -755,7 +757,7 @@ TEST_CASE("Unset option environment variables", "[libenvpp]")
 		CHECK(parsed_and_validated_pre.warnings().empty());
 		CHECK(parsed_and_validated_pre.errors().size() == 1);
 		CHECK_THAT(parsed_and_validated_pre.error_message(),
-		           ContainsSubstring("error") && ContainsSubstring(prefix_name)
+		           StartsWith("Error") && ContainsSubstring(prefix_name)
 		               && ContainsSubstring("'LIBENVPP_TESTING_UNSET' not set"));
 	}
 }
@@ -904,8 +906,8 @@ TEST_CASE("Parsed and validated prefix can be moved", "[libenvpp]")
 
 	const auto check_prefix = [&int_var](const auto& parsed_pre) {
 		CHECK(parsed_pre.ok());
-		CHECK_THAT(parsed_pre.error_message(), ContainsSubstring("No errors for prefix"));
-		CHECK_THAT(parsed_pre.warning_message(), ContainsSubstring("No warnings for prefix"));
+		CHECK_THAT(parsed_pre.error_message(), IsEmpty());
+		CHECK_THAT(parsed_pre.warning_message(), IsEmpty());
 		CHECK(parsed_pre.errors().empty());
 		CHECK(parsed_pre.warnings().empty());
 		CHECK_THAT(parsed_pre.help_message(), ContainsSubstring("'LIBENVPP_TESTING_ENV_VAR' optional"));

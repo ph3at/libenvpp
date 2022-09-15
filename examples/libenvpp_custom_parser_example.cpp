@@ -59,8 +59,8 @@ int main()
 		std::cout << "Program data number : " << prog_data.number << std::endl;
 		std::cout << "Program data percent: " << prog_data.percent << std::endl;
 	} else {
-		std::cout << parsed_and_validated_pre.warning_message() << std::endl;
-		std::cout << parsed_and_validated_pre.error_message() << std::endl;
+		std::cout << parsed_and_validated_pre.warning_message();
+		std::cout << parsed_and_validated_pre.error_message();
 	}
 
 	return EXIT_SUCCESS;

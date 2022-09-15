@@ -76,8 +76,8 @@ If anything went wrong, like the required variable not being found, or the varia
 
 ```cpp
 if (!parsed_and_validated_pre.ok()) {
-    std::cout << parsed_and_validated_pre.warning_message() << std::endl;
-    std::cout << parsed_and_validated_pre.error_message() << std::endl;
+    std::cout << parsed_and_validated_pre.warning_message();
+    std::cout << parsed_and_validated_pre.error_message();
 }
 ```
 
@@ -122,8 +122,8 @@ int main()
         std::cout << "Log path   : " << log_path << std::endl;
         std::cout << "Num threads: " << num_threads << std::endl;
     } else {
-        std::cout << parsed_and_validated_pre.warning_message() << std::endl;
-        std::cout << parsed_and_validated_pre.error_message() << std::endl;
+        std::cout << parsed_and_validated_pre.warning_message();
+        std::cout << parsed_and_validated_pre.error_message();
     }
 
     return EXIT_SUCCESS;
@@ -136,19 +136,15 @@ Running the example without having any environment variable set:
 
 ```bash
 $ ./libenvpp_simple_usage_example
-No warnings for prefix 'MYPROG'
-The following 1 error(s) occurred when parsing and validating prefix 'MYPROG':
-        Environment variable 'MYPROG_NUM_THREADS' not set
+Error  : Environment variable 'MYPROG_NUM_THREADS' not set
 ```
 
 Running the example with a typo:
 
 ```bash
 $ MYPROG_LOG_FILEPATH=/var/log/file ./libenvpp_simple_usage_example
-The following 1 warning(s) occurred when parsing and validating prefix 'MYPROG':
-        Unrecognized environment variable 'MYPROG_LOG_FILEPATH' set, did you mean 'MYPROG_LOG_FILE_PATH'?
-The following 1 error(s) occurred when parsing and validating prefix 'MYPROG':
-        Environment variable 'MYPROG_NUM_THREADS' not set
+Warning: Unrecognized environment variable 'MYPROG_LOG_FILEPATH' set, did you mean 'MYPROG_LOG_FILE_PATH'?
+Error  : Environment variable 'MYPROG_NUM_THREADS' not set
 ```
 
 Running the example with only the required variable set:
@@ -283,8 +279,8 @@ if (parsed_and_validated_pre.ok()) {
     const auto num_threads = parsed_and_validated_pre.get_or(num_threads_id, std::thread::hardware_concurrency());
     std::cout << "Number of threads: " << num_threads << std::endl;
 } else {
-    std::cout << parsed_and_validated_pre.warning_message() << std::endl;
-    std::cout << parsed_and_validated_pre.error_message() << std::endl;
+    std::cout << parsed_and_validated_pre.warning_message();
+    std::cout << parsed_and_validated_pre.error_message();
 }
 ```
 
@@ -351,7 +347,7 @@ auto pre = env::prefix("MYPROG");
 const auto log_path_id = pre.register_variable<std::filesystem::path>("LOG_FILE_PATH");
 const auto num_threads_id = pre.register_required_variable<unsigned int>("NUM_THREADS");
 
-std::cout << pre.help_message() << std::endl;
+std::cout << pre.help_message();
 ```
 
 will output:

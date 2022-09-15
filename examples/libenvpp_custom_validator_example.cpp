@@ -34,8 +34,8 @@ int main()
 
 		std::cout << "Existing logging directory: " << *path << std::endl;
 	} else {
-		std::cout << parsed_and_validated_pre.warning_message() << std::endl;
-		std::cout << parsed_and_validated_pre.error_message() << std::endl;
+		std::cout << parsed_and_validated_pre.warning_message();
+		std::cout << parsed_and_validated_pre.error_message();
 	}
 
 	return EXIT_SUCCESS;

@@ -167,13 +167,13 @@ class parsed_and_validated_prefix {
 	[[nodiscard]] std::string error_message() const
 	{
 		throw_if_invalid();
-		return message_formatting_helper("error", m_errors);
+		return message_formatting_helper("Error", m_errors);
 	}
 
 	[[nodiscard]] std::string warning_message() const
 	{
 		throw_if_invalid();
-		return message_formatting_helper("warning", m_warnings);
+		return message_formatting_helper("Warning", m_warnings);
 	}
 
 	[[nodiscard]] const std::vector<error>& errors() const
@@ -278,12 +278,11 @@ class parsed_and_validated_prefix {
 	                                                    const std::vector<error>& errors_or_warnings) const
 	{
 		if (errors_or_warnings.empty()) {
-			return fmt::format("No {}s for prefix '{}'", message_type, m_prefix.m_prefix_name);
+			return {};
 		}
-		auto msg = fmt::format("The following {} {}(s) occurred when parsing and validating prefix '{}':\n",
-		                       errors_or_warnings.size(), message_type, m_prefix.m_prefix_name);
+		auto msg = std::string();
 		for (std::size_t i = 0; i < errors_or_warnings.size(); ++i) {
-			msg += fmt::format("\t{}{}", errors_or_warnings[i].what(), i + 1 < errors_or_warnings.size() ? "\n" : "");
+			msg += fmt::format("{:<7}: {}\n", message_type, errors_or_warnings[i].what());
 		}
 		return msg;
 	}
@@ -429,15 +428,14 @@ class prefix {
 		throw_if_invalid();
 
 		if (m_registered_vars.empty()) {
-			return fmt::format("There are no supported environment variables for the prefix '{}'", m_prefix_name);
+			return fmt::format("There are no supported environment variables for the prefix '{}'\n", m_prefix_name);
 		}
 		auto msg = fmt::format("Prefix '{}' supports the following {} environment variable(s):\n", m_prefix_name,
 		                       m_registered_vars.size());
 		for (std::size_t i = 0; i < m_registered_vars.size(); ++i) {
 			const auto& var = m_registered_vars[i];
 			const auto var_name = get_full_env_var_name(i);
-			msg += fmt::format("\t'{}' {}{}", var_name, var.m_is_required ? "required" : "optional",
-			                   i + 1 < m_registered_vars.size() ? "\n" : "");
+			msg += fmt::format("\t'{}' {}\n", var_name, var.m_is_required ? "required" : "optional");
 		}
 		return msg;
 	}
