@@ -7,8 +7,6 @@
 #include <Windows.h>
 
 #include <array>
-#include <cwchar>
-#include <type_traits>
 
 #include <libenvpp_check.hpp>
 

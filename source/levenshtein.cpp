@@ -1,7 +1,6 @@
 #include "levenshtein.hpp"
 
 #include <algorithm>
-#include <cassert>
 #include <vector>
 
 #include <libenvpp_check.hpp>

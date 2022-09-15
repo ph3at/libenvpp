@@ -4,6 +4,8 @@
 
 #include <stdlib.h>
 
+#include <array>
+
 #include <libenvpp_check.hpp>
 
 extern "C" const char* const* const environ;

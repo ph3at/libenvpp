@@ -1,7 +1,6 @@
 #pragma once
 
 #include <limits>
-#include <stdexcept>
 #include <string_view>
 
 namespace levenshtein {
