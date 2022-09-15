@@ -107,6 +107,43 @@ int main()
 }
 ```
 
+#### Simple Example - Output
+
+Running the example without having any environment variable set:
+
+```bash
+$ ./libenvpp_simple_usage_example
+No warnings for prefix 'MYPROG'
+The following 1 error(s) occurred when parsing and validating prefix 'MYPROG':
+        Environment variable 'MYPROG_NUM_THREADS' not set
+```
+
+Running the example with a typo:
+
+```bash
+$ MYPROG_LOG_FILEPATH=/var/log/file ./libenvpp_simple_usage_example
+The following 1 warning(s) occurred when parsing and validating prefix 'MYPROG':
+        Unrecognized environment variable 'MYPROG_LOG_FILEPATH' set, did you mean 'MYPROG_LOG_FILE_PATH'?
+The following 1 error(s) occurred when parsing and validating prefix 'MYPROG':
+        Environment variable 'MYPROG_NUM_THREADS' not set
+```
+
+Running the example with only the required variable set:
+
+```bash
+$ MYPROG_NUM_THREADS=4 ./libenvpp_simple_usage_example
+Log path   : "/default/log/path"
+Num threads: 4
+```
+
+Running the example with both variables set:
+
+```bash
+$ MYPROG_LOG_FILE_PATH=/var/log/file MYPROG_NUM_THREADS=4 ./libenvpp_simple_usage_example
+Log path   : "/var/log/file"
+Num threads: 4
+```
+
 ### Custom Type Parser
 
 To provide a parser for a user-defined type it is necessary to specialize the template struct `env::default_parser` for the specific type that should be parsed and provide a call operator that takes a `std::string_view` and returns the parsed type, for example:
