@@ -24,6 +24,8 @@ This library provides a modern, platform independent, type safe way of handling 
     - [Warnings](#warnings)
     - [Errors](#errors)
   - [Warnings and Errors - Code](#warnings-and-errors---code)
+- [Installation](#installation)
+  - [Cmake Options](#cmake-options)
 
 ## Features
 
@@ -404,3 +406,15 @@ The following situations will generate an error:
 ### Warnings and Errors - Code
 
 For an example of how the warning/error handling functions can be used, see [examples/libenvpp_error_handling_example.cpp](examples/libenvpp_error_handling_example.cpp).
+
+## Installation
+
+The library uses cmake as the build system and can be easily integrated into an existing cmake project by adding it with `add_subdirectory`, ideally used in combination with a git submodule of the library. The build system will detect this use-case and automatically disable the building of examples and tests.
+
+### Cmake Options
+
+| Option              | Default                                                    | Description                                                                                                                                               |
+|---------------------|------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `LIBENVPP_EXAMPLES` | `ON` if configured standalone, `OFF` if used as dependency | Enables building of example programs.                                                                                                                     |
+| `LIBENVPP_TESTS`    | `ON` if configured standalone, `OFF` if used as dependency | Enables building of unit tests.                                                                                                                           |
+| `LIBENVPP_CHECKS`   | `ON` in debug builds, `OFF` in release builds              | Custom assertions that are not tied to `NDEBUG`, and are testable by throwing an exception instead of `std::abort`ing _iff_ `LIBENVPP_TESTS` are enabled. |
