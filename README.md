@@ -301,3 +301,48 @@ Prefix 'MYPROG' supports the following 2 environment variable(s):
     'LOG_FILE_PATH' optional
     'NUM_THREADS' required
 ```
+
+#### Warnings and Errors
+
+If anything goes wrong when parsing and validating a prefix this can be queried through the following functions:
+
+| Function            | Return value                                                   |
+|---------------------|----------------------------------------------------------------|
+| `ok()`              | `bool` indicating whether there are any errors or warnings     |
+| `warning_message()` | `std::string` with a formatted message containing all warnings |
+| `error_message()`   | `std::string` with a formatted message containing all errors   |
+| `warnings()`        | `std::vector<env::error>` containing all warnings              |
+| `errors()`          | `std::vector<env::error>` containing all errors                |
+
+##### `error` Type
+
+The `env::error` type is used to give more information on warnings and errors. The type supports:
+
+| Function     | Return value                                                                                                                                |
+|--------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `get_id()`   | `std::size_t` ID of the variable that caused the error/warning. This ID can be compared to the ID returned from the `register_*` functions. |
+| `get_name()` | `std::string` containing the name of the variable that caused the warning/error.                                                            |
+| `what()`     | `std::string` containing the warning/error message.                                                                                         |
+
+##### Warnings
+
+The following situations will generate a warning:
+
+- An optional variable is not set, but a similar (within edit distance configured for the prefix) unused variable is.
+- An unused variable with the same prefix is set.
+
+##### Errors
+
+The following situations will generate an error:
+
+- A variable could not be parsed.
+- A variable could not be validated.
+- The value of a range variable is outside the specified range.
+- The value of an option variable is not a valid option.
+- An unexpected exception was thrown while parsing/validating a variable.
+- A required variable is not set, but a similar (within edit distance configured for the prefix) unused variable is.
+- A required variable is not set.
+
+#### Warnings and Errors - Code
+
+For an example of how the warning/error handling functions can be used, see [examples/libenvpp_error_handling_example.cpp](examples/libenvpp_error_handling_example.cpp).
