@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include <libenvpp.hpp>
+#include <libenvpp/env.hpp>
 
 int main()
 {

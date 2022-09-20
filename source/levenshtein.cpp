@@ -1,9 +1,9 @@
-#include "levenshtein.hpp"
+#include <libenvpp/detail/levenshtein.hpp>
 
 #include <algorithm>
 #include <vector>
 
-#include <libenvpp_check.hpp>
+#include <libenvpp/detail/check.hpp>
 
 namespace levenshtein {
 

@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include <libenvpp.hpp>
+#include <libenvpp/env.hpp>
 
 static std::vector<std::string> split(const std::string_view str, const char delimiter)
 {

@@ -1,6 +1,6 @@
 #if LIBENVPP_PLATFORM_WINDOWS
 
-#include <libenvpp_env.hpp>
+#include <libenvpp/detail/environment.hpp>
 
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -8,7 +8,7 @@
 
 #include <array>
 
-#include <libenvpp_check.hpp>
+#include <libenvpp/detail/check.hpp>
 
 namespace env::detail {
 

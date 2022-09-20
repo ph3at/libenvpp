@@ -47,7 +47,7 @@ This library provides a modern, platform independent, type-safe way of handling 
 To use the library the first step would be to include the header:
 
 ```cpp
-#include <libenvpp.hpp>
+#include <libenvpp/env.hpp>
 ```
 
 The library is built around the idea of a `prefix`. The assumption is that all relevant environment variables used by a program share the same prefix, for example with the prefix `MYPROG`:
@@ -108,7 +108,7 @@ Putting everything together:
 #include <iostream>
 #include <string>
 
-#include <libenvpp.hpp>
+#include <libenvpp/env.hpp>
 
 int main()
 {

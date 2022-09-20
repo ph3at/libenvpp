@@ -1,12 +1,12 @@
 #if LIBENVPP_PLATFORM_UNIX
 
-#include <libenvpp_env.hpp>
+#include <libenvpp/detail/environment.hpp>
 
 #include <stdlib.h>
 
 #include <array>
 
-#include <libenvpp_check.hpp>
+#include <libenvpp/detail/check.hpp>
 
 extern "C" const char* const* const environ;
 

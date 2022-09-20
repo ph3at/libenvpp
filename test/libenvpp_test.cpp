@@ -7,8 +7,8 @@
 #include <catch2/matchers/catch_matchers_all.hpp>
 #include <fmt/core.h>
 
-#include <libenvpp.hpp>
-#include <libenvpp_env.hpp>
+#include <libenvpp/detail/environment.hpp>
+#include <libenvpp/env.hpp>
 
 namespace env {
 

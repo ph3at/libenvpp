@@ -63,8 +63,8 @@ unset(CMAKE_FOLDER)
 # libenvpp library.
 set(LIBENVPP_SOURCES
 	"source/levenshtein.cpp"
-	"source/libenvpp_env_unix.cpp"
-	"source/libenvpp_env_windows.cpp"
+	"source/libenvpp_environment_unix.cpp"
+	"source/libenvpp_environment_windows.cpp"
 )
 
 # Add includes to library so they show up in IDEs.
@@ -85,7 +85,7 @@ if(LIBENVPP_TESTS)
 	include(CTest)
 	add_executable(libenvpp_tests
 		"test/levenshtein_test.cpp"
-		"test/libenvpp_env_test.cpp"
+		"test/libenvpp_environment_test.cpp"
 		"test/libenvpp_parser_test.cpp"
 		"test/libenvpp_test.cpp"
 	)

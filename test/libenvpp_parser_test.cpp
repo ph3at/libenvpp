@@ -7,7 +7,7 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 #include <fmt/core.h>
 
-#include <libenvpp_parser.hpp>
+#include <libenvpp/detail/parser.hpp>
 
 namespace env::detail {
 

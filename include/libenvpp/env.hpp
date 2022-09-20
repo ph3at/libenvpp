@@ -16,10 +16,10 @@
 
 #include <fmt/core.h>
 
-#include <levenshtein.hpp>
-#include <libenvpp_env.hpp>
-#include <libenvpp_errors.hpp>
-#include <libenvpp_parser.hpp>
+#include <libenvpp/detail/environment.hpp>
+#include <libenvpp/detail/errors.hpp>
+#include <libenvpp/detail/levenshtein.hpp>
+#include <libenvpp/detail/parser.hpp>
 
 namespace env {
 

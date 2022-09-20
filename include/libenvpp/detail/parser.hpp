@@ -11,8 +11,8 @@
 
 #include <fmt/core.h>
 
-#include <libenvpp_errors.hpp>
-#include <libenvpp_util.hpp>
+#include <libenvpp/detail/errors.hpp>
+#include <libenvpp/detail/util.hpp>
 
 namespace env::detail {
 

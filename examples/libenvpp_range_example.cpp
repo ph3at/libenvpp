@@ -2,7 +2,7 @@
 #include <iostream>
 #include <thread>
 
-#include <libenvpp.hpp>
+#include <libenvpp/env.hpp>
 
 int main()
 {

@@ -3,7 +3,7 @@
 #include <string>
 #include <string_view>
 
-#include <libenvpp.hpp>
+#include <libenvpp/env.hpp>
 
 enum class option {
 	first_choice,

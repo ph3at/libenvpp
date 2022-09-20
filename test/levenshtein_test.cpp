@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include <levenshtein.hpp>
-#include <libenvpp_check.hpp>
+#include <libenvpp/detail/check.hpp>
+#include <libenvpp/detail/levenshtein.hpp>
 
 TEST_CASE("Empty input", "[levenshtein]")
 {
