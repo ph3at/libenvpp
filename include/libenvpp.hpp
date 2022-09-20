@@ -521,4 +521,17 @@ class prefix {
 	friend class parsed_and_validated_prefix;
 };
 
+template <typename T>
+[[nodiscard]] std::optional<T> get(const std::string_view env_var_name) noexcept
+{
+	try {
+		if (const auto env_var_value = detail::get_environment_variable(env_var_name); env_var_value.has_value()) {
+			return default_parser_and_validator<T>{}(*env_var_value);
+		}
+	} catch (...) {
+	}
+
+	return {};
+}
+
 } // namespace env

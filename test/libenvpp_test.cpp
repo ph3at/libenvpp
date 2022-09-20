@@ -961,4 +961,52 @@ TEST_CASE("Moved from parsed and validated prefix throws", "[libenvpp]")
 	}
 }
 
+TEST_CASE_METHOD(int_var_fixture, "Retrieving integer with get", "[libenvpp][get]")
+{
+	const auto int_value = get<int>("LIBENVPP_TESTING_INT");
+	REQUIRE(int_value.has_value());
+	CHECK(*int_value == 42);
+}
+
+TEST_CASE_METHOD(float_var_fixture, "Retrieving float with get", "[libenvpp][get]")
+{
+	const auto float_value = get<float>("LIBENVPP_TESTING_FLOAT");
+	REQUIRE(float_value.has_value());
+	CHECK(*float_value == 3.1415f);
+}
+
+TEST_CASE_METHOD(string_var_fixture, "Retrieving string with get", "[libenvpp][get]")
+{
+	const auto string_value = get<std::string>("LIBENVPP_TESTING_STRING");
+	REQUIRE(string_value.has_value());
+	CHECK(*string_value == "Hello World");
+}
+
+TEST_CASE_METHOD(option_var_fixture, "Retrieving option with get", "[libenvpp][get]")
+{
+	const auto option_value = get<testing_option>("LIBENVPP_TESTING_OPTION");
+	REQUIRE(option_value.has_value());
+	CHECK(*option_value == testing_option::SECOND_OPTION);
+}
+
+TEST_CASE_METHOD(float_var_fixture, "Parsing error using get", "[libenvpp][get]")
+{
+	const auto int_value = get<int>("LIBENVPP_TESTING_FLOAT");
+	CHECK_FALSE(int_value.has_value());
+}
+
+TEST_CASE("Validation error using get", "[libenvpp][get]")
+{
+	const auto _ = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_UNVALIDATABLE", "FOO"};
+
+	const auto value = get<unvalidatable_type>("LIBENVPP_TESTING_UNVALIDATABLE");
+	CHECK_FALSE(value.has_value());
+}
+
+TEST_CASE("Environment variable does not exist when using get", "[libenvpp][get]")
+{
+	const auto value = get<int>("LIBENVPP_TESTING_INT");
+	CHECK_FALSE(value.has_value());
+}
+
 } // namespace env
