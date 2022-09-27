@@ -340,6 +340,18 @@ TEST_CASE_METHOD(int_var_fixture, "Typo detection using edit distance", "[libenv
 	}
 }
 
+TEST_CASE_METHOD(int_var_fixture, "Typos in prefix are detected", "[libenvpp]")
+{
+	auto pre = env::prefix("LIBVENPP_TESTING");
+	[[maybe_unused]] const auto int_id = pre.register_variable<int>("INT");
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	REQUIRE_FALSE(parsed_and_validated_pre.ok());
+
+	CHECK_THAT(parsed_and_validated_pre.warning_message(),
+	           StartsWith("Warning") && ContainsSubstring("'LIBENVPP_TESTING_INT' set")
+	               && ContainsSubstring("did you mean 'LIBVENPP_TESTING_INT'"));
+}
+
 TEST_CASE("Typo detection does not trigger on already consumed variables", "[libenvpp]")
 {
 	const auto foo_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "BAR"};
@@ -354,6 +366,41 @@ TEST_CASE("Typo detection does not trigger on already consumed variables", "[lib
 	CHECK_THAT(parsed_and_validated_pre.warning_message(),
 	           StartsWith("Warning") && ContainsSubstring("'LIBENVPP_TESTING_FOU' set")
 	               && ContainsSubstring("did you mean 'LIBENVPP_TESTING_FUU'"));
+}
+
+TEST_CASE("Custom edit distance cutoff value", "[libenvpp]")
+{
+	SECTION("Typo detection disabled")
+	{
+		const auto _ = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "BAR"};
+
+		auto pre = env::prefix("LIBENVPP_TESTING", 0);
+		[[maybe_unused]] const auto env_var_id = pre.register_variable<std::string>("FUO");
+		const auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK_THAT(parsed_and_validated_pre.warning_message(),
+		           StartsWith("Warning") && ContainsSubstring("'LIBENVPP_TESTING_FOO' specified but unused")
+		               && !ContainsSubstring("did you mean"));
+	}
+
+	SECTION("Edit distance of 1")
+	{
+		const auto abc_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_ABC", "BAR"};
+		const auto def_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_DEF", "BAR"};
+
+		auto pre = env::prefix("LIBENVPP_TESTING", 1);
+		[[maybe_unused]] const auto abz_id = pre.register_variable<std::string>("ABZ");
+		[[maybe_unused]] const auto dyz_id = pre.register_variable<std::string>("DYZ");
+		const auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		REQUIRE(parsed_and_validated_pre.warnings().size() == 2);
+		CHECK_THAT(parsed_and_validated_pre.warnings()[0].what(),
+		           ContainsSubstring("'LIBENVPP_TESTING_ABC' set")
+		               && ContainsSubstring("did you mean 'LIBENVPP_TESTING_ABZ'"));
+		CHECK_THAT(parsed_and_validated_pre.warnings()[1].what(),
+		           ContainsSubstring("'LIBENVPP_TESTING_DEF' specified but unused")
+		               && !ContainsSubstring("did you mean"));
+	}
 }
 
 TEST_CASE("Unused variable with same prefix", "[libenvpp]")
