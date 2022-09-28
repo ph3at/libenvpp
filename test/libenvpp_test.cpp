@@ -424,6 +424,19 @@ TEST_CASE("Unused variable with same prefix", "[libenvpp]")
 		auto parsed_and_validated_pre = pre.parse_and_validate();
 		CHECK(parsed_and_validated_pre.ok());
 	}
+
+	SECTION("Prefix check considers '_' as part of the prefix")
+	{
+		const auto foo_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "FOO"};
+		const auto bar_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTINGBAR", "BAR"};
+
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK(parsed_and_validated_pre.warnings().size() == 1);
+		CHECK_THAT(parsed_and_validated_pre.warning_message(),
+		           ContainsSubstring("'LIBENVPP_TESTING_FOO'") && !ContainsSubstring("'LIBENVPP_TESTINGBAR'"));
+	}
 }
 
 TEST_CASE("Set for testing", "[libenvpp]")

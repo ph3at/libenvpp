@@ -339,9 +339,11 @@ class parsed_and_validated_prefix {
 };
 
 class prefix {
+	static constexpr auto PREFIX_DELIMITER = '_';
+
   public:
 	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 3)
-	    : m_prefix_name(prefix_name), m_edit_distance_cutoff(edit_distance_cutoff)
+	    : m_prefix_name(std::string(prefix_name) + PREFIX_DELIMITER), m_edit_distance_cutoff(edit_distance_cutoff)
 	{
 		if (m_prefix_name.empty()) {
 			throw invalid_prefix{"Prefix name must not be empty"};
@@ -444,7 +446,7 @@ class prefix {
 
 	[[nodiscard]] std::string get_full_env_var_name(const std::string_view name) const
 	{
-		return m_prefix_name + "_" + std::string(name);
+		return m_prefix_name + std::string(name);
 	}
 
 	void throw_if_invalid() const
