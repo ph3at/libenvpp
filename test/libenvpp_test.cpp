@@ -374,7 +374,7 @@ TEST_CASE("Custom edit distance cutoff value", "[libenvpp]")
 	{
 		const auto _ = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_FOO", "BAR"};
 
-		auto pre = env::prefix("LIBENVPP_TESTING", 0);
+		auto pre = env::prefix("LIBENVPP_TESTING", edit_distance{0});
 		[[maybe_unused]] const auto env_var_id = pre.register_variable<std::string>("FUO");
 		const auto parsed_and_validated_pre = pre.parse_and_validate();
 		CHECK_FALSE(parsed_and_validated_pre.ok());
@@ -388,7 +388,7 @@ TEST_CASE("Custom edit distance cutoff value", "[libenvpp]")
 		const auto abc_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_ABC", "BAR"};
 		const auto def_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_DEF", "BAR"};
 
-		auto pre = env::prefix("LIBENVPP_TESTING", 1);
+		auto pre = env::prefix("LIBENVPP_TESTING", edit_distance{1});
 		[[maybe_unused]] const auto abz_id = pre.register_variable<std::string>("ABZ");
 		[[maybe_unused]] const auto dyz_id = pre.register_variable<std::string>("DYZ");
 		const auto parsed_and_validated_pre = pre.parse_and_validate();
@@ -400,6 +400,73 @@ TEST_CASE("Custom edit distance cutoff value", "[libenvpp]")
 		CHECK_THAT(parsed_and_validated_pre.warnings()[1].what(),
 		           ContainsSubstring("'LIBENVPP_TESTING_DEF' specified but unused")
 		               && !ContainsSubstring("did you mean"));
+	}
+}
+
+TEST_CASE("Environment variable name length is taken into account for typo detection", "[libenvpp]")
+{
+	SECTION("Variables with length <= 3 are not typo checked")
+	{
+		const auto _ = detail::set_scoped_environment_variable{"P_F", "BAR"};
+
+		auto pre = env::prefix("P");
+		[[maybe_unused]] const auto env_var_id = pre.register_variable<std::string>("V");
+		const auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		CHECK_THAT(parsed_and_validated_pre.warning_message(), StartsWith("Warning")
+		                                                           && ContainsSubstring("'P_F' specified but unused")
+		                                                           && !ContainsSubstring("did you mean"));
+	}
+
+	SECTION("Variables with length <= 6 can at most have 1 typo")
+	{
+		const auto ab_var = detail::set_scoped_environment_variable{"PRE_AB", "BAR"};
+		const auto cd_var = detail::set_scoped_environment_variable{"PRE_CD", "BAR"};
+
+		auto pre = env::prefix("PRE");
+		[[maybe_unused]] const auto az_id = pre.register_variable<std::string>("AZ");
+		[[maybe_unused]] const auto yz_id = pre.register_variable<std::string>("YZ");
+		const auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		REQUIRE(parsed_and_validated_pre.warnings().size() == 2);
+		CHECK_THAT(parsed_and_validated_pre.warnings()[0].what(),
+		           ContainsSubstring("'PRE_AB' set") && ContainsSubstring("did you mean 'PRE_AZ'"));
+		CHECK_THAT(parsed_and_validated_pre.warnings()[1].what(),
+		           ContainsSubstring("'PRE_CD' specified but unused") && !ContainsSubstring("did you mean"));
+	}
+
+	SECTION("Variables with length <= 9 can at most have 2 typos")
+	{
+		const auto abc_var = detail::set_scoped_environment_variable{"PREFI_ABC", "BAR"};
+		const auto def_var = detail::set_scoped_environment_variable{"PREFI_DEF", "BAR"};
+
+		auto pre = env::prefix("PREFI");
+		[[maybe_unused]] const auto ayz_id = pre.register_variable<std::string>("AYZ");
+		[[maybe_unused]] const auto xyz_id = pre.register_variable<std::string>("XYZ");
+		const auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		REQUIRE(parsed_and_validated_pre.warnings().size() == 2);
+		CHECK_THAT(parsed_and_validated_pre.warnings()[0].what(),
+		           ContainsSubstring("'PREFI_ABC' set") && ContainsSubstring("did you mean 'PREFI_AYZ'"));
+		CHECK_THAT(parsed_and_validated_pre.warnings()[1].what(),
+		           ContainsSubstring("'PREFI_DEF' specified but unused") && !ContainsSubstring("did you mean"));
+	}
+
+	SECTION("Variables with length > 9 can at most have 3 typos")
+	{
+		const auto abcd_var = detail::set_scoped_environment_variable{"PREFI_ABCD", "BAR"};
+		const auto efgh_var = detail::set_scoped_environment_variable{"PREFI_EFGH", "BAR"};
+
+		auto pre = env::prefix("PREFI");
+		[[maybe_unused]] const auto axyz_id = pre.register_variable<std::string>("AXYZ");
+		[[maybe_unused]] const auto wxyz_id = pre.register_variable<std::string>("WXYZ");
+		const auto parsed_and_validated_pre = pre.parse_and_validate();
+		CHECK_FALSE(parsed_and_validated_pre.ok());
+		REQUIRE(parsed_and_validated_pre.warnings().size() == 2);
+		CHECK_THAT(parsed_and_validated_pre.warnings()[0].what(),
+		           ContainsSubstring("'PREFI_ABCD' set") && ContainsSubstring("did you mean 'PREFI_AXYZ'"));
+		CHECK_THAT(parsed_and_validated_pre.warnings()[1].what(),
+		           ContainsSubstring("'PREFI_EFGH' specified but unused") && !ContainsSubstring("did you mean"));
 	}
 }
 

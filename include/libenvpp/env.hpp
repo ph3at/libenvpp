@@ -16,6 +16,7 @@
 
 #include <fmt/core.h>
 
+#include <libenvpp/detail/edit_distance.hpp>
 #include <libenvpp/detail/environment.hpp>
 #include <libenvpp/detail/errors.hpp>
 #include <libenvpp/detail/levenshtein.hpp>
@@ -301,17 +302,18 @@ class parsed_and_validated_prefix {
 			return std::nullopt;
 		}
 
+		const auto edit_dist_cutoff = m_prefix.m_edit_distance_cutoff.get_or_default(var_name.length());
+
 		auto edit_distances = std::vector<std::pair<int, std::string>>{};
-		std::transform(environment.begin(), environment.end(), std::back_inserter(edit_distances),
-		               [this, &var_name](const auto& entry) {
-			               return std::pair{
-			                   levenshtein::distance(var_name, entry.first, m_prefix.m_edit_distance_cutoff + 1),
-			                   entry.first};
-		               });
+		std::transform(
+		    environment.begin(), environment.end(), std::back_inserter(edit_distances),
+		    [&var_name, &edit_dist_cutoff](const auto& entry) {
+			    return std::pair{levenshtein::distance(var_name, entry.first, edit_dist_cutoff + 1), entry.first};
+		    });
 		std::sort(edit_distances.begin(), edit_distances.end(),
 		          [](const auto& a, const auto& b) { return a.first < b.first; });
-		const auto& [edit_distance, var] = edit_distances.front();
-		if (edit_distance <= m_prefix.m_edit_distance_cutoff) {
+		const auto& [edit_dist, var] = edit_distances.front();
+		if (edit_dist <= edit_dist_cutoff) {
 			return var;
 		}
 
@@ -342,10 +344,10 @@ class prefix {
 	static constexpr auto PREFIX_DELIMITER = '_';
 
   public:
-	prefix(const std::string_view prefix_name, const int edit_distance_cutoff = 3)
+	prefix(const std::string_view prefix_name, const edit_distance edit_distance_cutoff = unset_edit_distance)
 	    : m_prefix_name(std::string(prefix_name) + PREFIX_DELIMITER), m_edit_distance_cutoff(edit_distance_cutoff)
 	{
-		if (m_prefix_name.empty()) {
+		if (m_prefix_name.size() == 1 && m_prefix_name[0] == PREFIX_DELIMITER) {
 			throw invalid_prefix{"Prefix name must not be empty"};
 		}
 	}
@@ -515,7 +517,7 @@ class prefix {
 	}
 
 	std::string m_prefix_name;
-	int m_edit_distance_cutoff = -1;
+	edit_distance m_edit_distance_cutoff;
 	std::vector<detail::variable_data> m_registered_vars;
 	bool m_invalidated = false;
 
