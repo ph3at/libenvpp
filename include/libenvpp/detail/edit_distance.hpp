@@ -15,26 +15,25 @@ class edit_distance {
 	constexpr edit_distance& operator=(const edit_distance&) = default;
 	constexpr edit_distance& operator=(edit_distance&&) = default;
 
-	constexpr int get_or_default(const std::size_t length) const
+	[[nodiscard]] constexpr int get_or_default(const std::size_t length) const
 	{
 		if (m_value >= 0) {
 			return m_value;
-		}
-
-		if (length <= 3) {
+		} else if (length <= 3) {
 			return 0;
 		} else if (length <= 6) {
 			return 1;
 		} else if (length <= 9) {
 			return 2;
+		} else {
+			return 3;
 		}
-		return 3;
 	}
 
   private:
 	int m_value;
 };
 
-inline constexpr auto unset_edit_distance = edit_distance();
+inline constexpr auto default_edit_distance = edit_distance();
 
 } // namespace env

@@ -14,7 +14,8 @@
 #include <libenvpp/detail/errors.hpp>
 #include <libenvpp/detail/util.hpp>
 
-namespace env::detail {
+namespace env {
+namespace detail {
 
 template <typename T>
 struct is_string_constructible : std::conditional_t<                                 //
@@ -113,4 +114,26 @@ template <typename T>
 	}
 }
 
-} // namespace env::detail
+} // namespace detail
+
+template <typename T>
+struct default_validator {
+	void operator()(const T&) const noexcept {}
+};
+
+template <typename T>
+struct default_parser {
+	[[nodiscard]] T operator()(const std::string_view str) const { return detail::construct_from_string<T>(str); }
+};
+
+template <typename T>
+struct default_parser_and_validator {
+	[[nodiscard]] T operator()(const std::string_view str) const
+	{
+		const auto value = default_parser<T>{}(str);
+		default_validator<T>{}(value);
+		return value;
+	}
+};
+
+} // namespace env

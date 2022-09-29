@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <any>
 #include <cstddef>
-#include <exception>
 #include <functional>
 #include <initializer_list>
 #include <optional>
@@ -19,6 +18,7 @@
 #include <libenvpp/detail/edit_distance.hpp>
 #include <libenvpp/detail/environment.hpp>
 #include <libenvpp/detail/errors.hpp>
+#include <libenvpp/detail/get.hpp>
 #include <libenvpp/detail/levenshtein.hpp>
 #include <libenvpp/detail/parser.hpp>
 
@@ -59,26 +59,6 @@ class variable_data {
 
 } // namespace detail
 
-template <typename T>
-struct default_validator {
-	void operator()(const T&) const noexcept {}
-};
-
-template <typename T>
-struct default_parser {
-	[[nodiscard]] T operator()(const std::string_view str) const { return detail::construct_from_string<T>(str); }
-};
-
-template <typename T>
-struct default_parser_and_validator {
-	[[nodiscard]] T operator()(const std::string_view str) const
-	{
-		const auto value = default_parser<T>{}(str);
-		default_validator<T>{}(value);
-		return value;
-	}
-};
-
 template <typename T, bool IsRequired>
 class variable_id {
   public:
@@ -89,8 +69,8 @@ class variable_id {
 	variable_id& operator=(const variable_id&) = default;
 	variable_id& operator=(variable_id&&) = delete;
 
-	bool operator==(const std::size_t rhs) const noexcept { return m_idx == rhs; }
-	bool operator!=(const std::size_t rhs) const noexcept { return !(*this == rhs); }
+	[[nodiscard]] bool operator==(const std::size_t rhs) const noexcept { return m_idx == rhs; }
+	[[nodiscard]] bool operator!=(const std::size_t rhs) const noexcept { return !(*this == rhs); }
 
 	friend bool operator==(const std::size_t lhs, const variable_id& rhs) noexcept { return rhs == lhs; }
 	friend bool operator!=(const std::size_t lhs, const variable_id& rhs) noexcept { return !(lhs == rhs); }
@@ -213,32 +193,12 @@ class parsed_and_validated_prefix {
 			if (!var_value.has_value()) {
 				unparsed_env_vars.push_back(id);
 			} else {
-				try {
-					var.m_value = var.m_parser_and_validator(*var_value);
-				} catch (const parser_error& e) {
-					m_errors.emplace_back(
-					    id, var.m_name,
-					    fmt::format("Parser error for environment variable '{}': {}", var_name, e.what()));
-				} catch (const validation_error& e) {
-					m_errors.emplace_back(
-					    id, var_name,
-					    fmt::format("Validation error for environment variable '{}': {}", var_name, e.what()));
-				} catch (const range_error& e) {
-					m_errors.emplace_back(
-					    id, var_name, fmt::format("Range error for environment variable '{}': {}", var_name, e.what()));
-				} catch (const option_error& e) {
-					m_errors.emplace_back(
-					    id, var_name,
-					    fmt::format("Option error for environment variable '{}': {}", var_name, e.what()));
-				} catch (const std::exception& e) {
-					m_errors.emplace_back(id, var_name,
-					                      fmt::format("Failed to parse or validate environment variable '{}' with: {}",
-					                                  var_name, e.what()));
-				} catch (...) {
-					m_errors.emplace_back(
-					    id, var_name,
-					    fmt::format("Failed to parse or validate environment variable '{}' with unknown error",
-					                var_name));
+				auto res =
+				    detail::parse_or_error<std::any>(var_name, *var_value, std::move(var.m_parser_and_validator));
+				if (res.has_value()) {
+					var.m_value = std::move(res).value();
+				} else {
+					m_errors.emplace_back(id, var.m_name, std::move(res).error());
 				}
 			}
 		}
@@ -246,7 +206,8 @@ class parsed_and_validated_prefix {
 		for (const auto id : unparsed_env_vars) {
 			auto& var = m_prefix.m_registered_vars[id];
 			const auto var_name = m_prefix.get_full_env_var_name(id);
-			const auto similar_var = find_similar_env_var(var_name, environment);
+			const auto edit_distance_cutoff = m_prefix.m_edit_distance_cutoff.get_or_default(var_name.length());
+			const auto similar_var = detail::find_similar_env_var(var_name, environment, edit_distance_cutoff);
 			if (similar_var.has_value()) {
 				const auto msg = fmt::format("Unrecognized environment variable '{}' set, did you mean '{}'?",
 				                             *similar_var, var_name);
@@ -294,32 +255,6 @@ class parsed_and_validated_prefix {
 		return val;
 	}
 
-	[[nodiscard]] std::optional<std::string>
-	find_similar_env_var(const std::string_view var_name,
-	                     const std::unordered_map<std::string, std::string>& environment) const
-	{
-		if (environment.empty()) {
-			return std::nullopt;
-		}
-
-		const auto edit_dist_cutoff = m_prefix.m_edit_distance_cutoff.get_or_default(var_name.length());
-
-		auto edit_distances = std::vector<std::pair<int, std::string>>{};
-		std::transform(
-		    environment.begin(), environment.end(), std::back_inserter(edit_distances),
-		    [&var_name, &edit_dist_cutoff](const auto& entry) {
-			    return std::pair{levenshtein::distance(var_name, entry.first, edit_dist_cutoff + 1), entry.first};
-		    });
-		std::sort(edit_distances.begin(), edit_distances.end(),
-		          [](const auto& a, const auto& b) { return a.first < b.first; });
-		const auto& [edit_dist, var] = edit_distances.front();
-		if (edit_dist <= edit_dist_cutoff) {
-			return var;
-		}
-
-		return std::nullopt;
-	}
-
 	[[nodiscard]] std::vector<std::string>
 	find_unused_env_vars(const std::unordered_map<std::string, std::string>& environment) const
 	{
@@ -344,7 +279,7 @@ class prefix {
 	static constexpr auto PREFIX_DELIMITER = '_';
 
   public:
-	prefix(const std::string_view prefix_name, const edit_distance edit_distance_cutoff = unset_edit_distance)
+	prefix(const std::string_view prefix_name, const edit_distance edit_distance_cutoff = default_edit_distance)
 	    : m_prefix_name(std::string(prefix_name) + PREFIX_DELIMITER), m_edit_distance_cutoff(edit_distance_cutoff)
 	{
 		if (m_prefix_name.size() == 1 && m_prefix_name[0] == PREFIX_DELIMITER) {
@@ -524,18 +459,5 @@ class prefix {
 	template <typename Prefix>
 	friend class parsed_and_validated_prefix;
 };
-
-template <typename T>
-[[nodiscard]] std::optional<T> get(const std::string_view env_var_name) noexcept
-{
-	try {
-		if (const auto env_var_value = detail::get_environment_variable(env_var_name); env_var_value.has_value()) {
-			return default_parser_and_validator<T>{}(*env_var_value);
-		}
-	} catch (...) {
-	}
-
-	return {};
-}
 
 } // namespace env
