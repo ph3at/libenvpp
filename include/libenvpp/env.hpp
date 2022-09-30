@@ -19,7 +19,6 @@
 #include <libenvpp/detail/environment.hpp>
 #include <libenvpp/detail/errors.hpp>
 #include <libenvpp/detail/get.hpp>
-#include <libenvpp/detail/levenshtein.hpp>
 #include <libenvpp/detail/parser.hpp>
 
 namespace env {
@@ -123,14 +122,14 @@ class parsed_and_validated_prefix {
 	}
 
 	template <typename T, bool IsRequired, typename U = T>
-	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, const U& default_value) const
+	[[nodiscard]] T get_or(const variable_id<T, IsRequired>& var_id, U&& default_value) const
 	{
 		static_assert(!IsRequired, "Default values are not supported on required variables");
 
 		throw_if_invalid();
 
 		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
-		return value.has_value() ? std::any_cast<T>(value) : default_value;
+		return value.has_value() ? std::any_cast<T>(value) : static_cast<T>(std::forward<U>(default_value));
 	}
 
 	[[nodiscard]] bool ok() const
@@ -185,7 +184,7 @@ class parsed_and_validated_prefix {
 		for (std::size_t id = 0; id < m_prefix.m_registered_vars.size(); ++id) {
 			auto& var = m_prefix.m_registered_vars[id];
 			const auto var_name = m_prefix.get_full_env_var_name(id);
-			const auto var_value = pop_from_environment(var_name, environment);
+			const auto var_value = detail::pop_from_environment(var_name, environment);
 			if (var.m_value.has_value()) {
 				// Skip variables set for testing, but consume their environment value if available.
 				continue;
@@ -207,24 +206,20 @@ class parsed_and_validated_prefix {
 			auto& var = m_prefix.m_registered_vars[id];
 			const auto var_name = m_prefix.get_full_env_var_name(id);
 			const auto edit_distance_cutoff = m_prefix.m_edit_distance_cutoff.get_or_default(var_name.length());
-			const auto similar_var = detail::find_similar_env_var(var_name, environment, edit_distance_cutoff);
-			if (similar_var.has_value()) {
-				const auto msg = fmt::format("Unrecognized environment variable '{}' set, did you mean '{}'?",
-				                             *similar_var, var_name);
-				pop_from_environment(*similar_var, environment);
+			auto similar_env_var_error =
+			    detail::get_similar_env_var_error(id, var_name, edit_distance_cutoff, environment);
+			if (similar_env_var_error.has_value()) {
 				if (var.m_is_required) {
-					m_errors.emplace_back(id, var_name, msg);
+					m_errors.push_back(std::move(similar_env_var_error).value());
 				} else {
-					m_warnings.emplace_back(id, var_name, msg);
+					m_warnings.push_back(std::move(similar_env_var_error).value());
 				}
 			} else if (var.m_is_required) {
-				m_errors.emplace_back(id, var_name, fmt::format("Environment variable '{}' not set", var_name));
+				m_errors.push_back(detail::get_unset_env_var_error(id, var_name));
 			}
 		}
 
-		const auto unused_variables = find_unused_env_vars(environment);
-
-		for (const auto& unused_var : unused_variables) {
+		for (auto&& unused_var : find_unused_env_vars(environment)) {
 			m_warnings.emplace_back(-1, unused_var,
 			                        fmt::format("Prefix environment variable '{}' specified but unused", unused_var));
 		}
@@ -241,18 +236,6 @@ class parsed_and_validated_prefix {
 			msg += fmt::format("{:<7}: {}\n", message_type, errors_or_warnings[i].what());
 		}
 		return msg;
-	}
-
-	std::optional<std::string> pop_from_environment(const std::string_view env_var,
-	                                                std::unordered_map<std::string, std::string>& environment) const
-	{
-		const auto var_it = environment.find(std::string(env_var));
-		if (var_it == environment.end()) {
-			return std::nullopt;
-		}
-		const auto [_, val] = *var_it;
-		environment.erase(var_it);
-		return val;
 	}
 
 	[[nodiscard]] std::vector<std::string>

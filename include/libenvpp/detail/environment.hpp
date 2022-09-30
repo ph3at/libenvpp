@@ -51,4 +51,11 @@ class set_scoped_environment_variable {
 	std::optional<std::string> m_old_value;
 };
 
+[[nodiscard]] std::optional<std::string>
+find_similar_env_var(const std::string_view var_name, const std::unordered_map<std::string, std::string>& environment,
+                     const int edit_distance_cutoff);
+
+std::optional<std::string> pop_from_environment(const std::string_view env_var,
+                                                std::unordered_map<std::string, std::string>& environment);
+
 } // namespace env::detail

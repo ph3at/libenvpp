@@ -12,6 +12,7 @@
 #include <fmt/core.h>
 
 #include <libenvpp/detail/errors.hpp>
+#include <libenvpp/detail/expected.hpp>
 #include <libenvpp/detail/util.hpp>
 
 namespace env {
@@ -135,5 +136,39 @@ struct default_parser_and_validator {
 		return value;
 	}
 };
+
+namespace detail {
+
+template <typename T, typename ParserAndValidator>
+[[nodiscard]] expected<T, std::string> parse_or_error(const std::string_view env_var_name,
+                                                      const std::string_view env_var_value,
+                                                      ParserAndValidator&& parser_and_validator)
+{
+	using expected_t = expected<T, std::string>;
+	using unexpected_t = typename expected_t::unexpected_type;
+
+	auto error_msg = typename expected_t::error_type();
+
+	try {
+		return expected_t{parser_and_validator(env_var_value)};
+	} catch (const parser_error& e) {
+		error_msg = fmt::format("Parser error for environment variable '{}': {}", env_var_name, e.what());
+	} catch (const validation_error& e) {
+		error_msg = fmt::format("Validation error for environment variable '{}': {}", env_var_name, e.what());
+	} catch (const range_error& e) {
+		error_msg = fmt::format("Range error for environment variable '{}': {}", env_var_name, e.what());
+	} catch (const option_error& e) {
+		error_msg = fmt::format("Option error for environment variable '{}': {}", env_var_name, e.what());
+	} catch (const std::exception& e) {
+		error_msg =
+		    fmt::format("Failed to parse or validate environment variable '{}' with: {}", env_var_name, e.what());
+	} catch (...) {
+		error_msg =
+		    fmt::format("Failed to parse or validate environment variable '{}' with unknown error", env_var_name);
+	}
+	return expected_t{unexpected_t{error_msg}};
+}
+
+} // namespace detail
 
 } // namespace env

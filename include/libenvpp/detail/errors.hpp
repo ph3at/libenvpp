@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 namespace env {
 
@@ -91,5 +93,15 @@ class error {
 	std::string m_var_name;
 	std::string m_error_message;
 };
+
+namespace detail {
+
+[[nodiscard]] std::optional<error> get_similar_env_var_error(const std::size_t id, const std::string_view env_var_name,
+                                                             const int edit_dist_cutoff,
+                                                             std::unordered_map<std::string, std::string>& environment);
+
+[[nodiscard]] error get_unset_env_var_error(const std::size_t id, const std::string_view env_var_name);
+
+} // namespace detail
 
 } // namespace env
