@@ -106,7 +106,6 @@ Putting everything together:
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
-#include <string>
 
 #include <libenvpp/env.hpp>
 
