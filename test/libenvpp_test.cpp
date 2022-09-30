@@ -1120,6 +1120,8 @@ TEST_CASE_METHOD(float_var_fixture, "Parsing error using get", "[libenvpp][get]"
 {
 	const auto int_value = get<int>("LIBENVPP_TESTING_FLOAT");
 	CHECK_FALSE(int_value.has_value());
+	CHECK_THAT(int_value.error().what(),
+	           ContainsSubstring("Parser error") && ContainsSubstring("'LIBENVPP_TESTING_FLOAT'"));
 }
 
 TEST_CASE("Validation error using get", "[libenvpp][get]")
@@ -1128,12 +1130,23 @@ TEST_CASE("Validation error using get", "[libenvpp][get]")
 
 	const auto value = get<unvalidatable_type>("LIBENVPP_TESTING_UNVALIDATABLE");
 	CHECK_FALSE(value.has_value());
+	CHECK_THAT(value.error().what(), ContainsSubstring("Validation error") && ContainsSubstring("Unvalidatable")
+	                                     && ContainsSubstring("'LIBENVPP_TESTING_UNVALIDATABLE'"));
 }
 
 TEST_CASE("Environment variable does not exist when using get", "[libenvpp][get]")
 {
 	const auto value = get<int>("LIBENVPP_TESTING_INT");
 	CHECK_FALSE(value.has_value());
+	CHECK_THAT(value.error().what(), ContainsSubstring("'LIBENVPP_TESTING_INT' not set"));
+}
+
+TEST_CASE_METHOD(int_var_fixture, "Typo detection when using get", "[libenvpp][get]")
+{
+	const auto value = get<int>("LIBENVPP_TESTING_HINT");
+	CHECK_FALSE(value.has_value());
+	CHECK_THAT(value.error().what(), ContainsSubstring("'LIBENVPP_TESTING_INT' set")
+	                                     && ContainsSubstring("did you mean 'LIBENVPP_TESTING_HINT'"));
 }
 
 } // namespace env
