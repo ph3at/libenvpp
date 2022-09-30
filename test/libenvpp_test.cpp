@@ -1149,4 +1149,35 @@ TEST_CASE_METHOD(int_var_fixture, "Typo detection when using get", "[libenvpp][g
 	                                     && ContainsSubstring("did you mean 'LIBENVPP_TESTING_HINT'"));
 }
 
+TEST_CASE("Retrieving integer with get_or", "[libenvpp][get]")
+{
+	SECTION("Set environment variable")
+	{
+		const auto _ = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_ENV_VAR", "FOO"};
+		const auto value = get_or<std::string>("LIBENVPP_TESTING_ENV_VAR", "BAR");
+		CHECK_THAT(value, Equals("FOO"));
+	}
+
+	SECTION("Unset environment variable")
+	{
+		const auto value = get_or<std::string>("LIBENVPP_TESTING_ENV_VAR", "BAR");
+		CHECK_THAT(value, Equals("BAR"));
+	}
+}
+
+TEST_CASE("Errors yield default value with get_or", "[libenvpp][get]")
+{
+	SECTION("Parser error")
+	{
+		const auto _ = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_ENV_VAR", "FOO"};
+		const auto value = get_or<int>("LIBENVPP_TESTING_ENV_VAR", 7);
+		CHECK(value == 7);
+	}
+
+	SECTION("Validation error")
+	{
+		CHECK_NOTHROW(get_or<unvalidatable_type>("LIBENVPP_TESTING_ENV_VAR", unvalidatable_type{"FOO"}));
+	}
+}
+
 } // namespace env
