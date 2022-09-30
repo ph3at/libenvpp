@@ -17,6 +17,8 @@ This library provides a modern, platform independent, type-safe way of handling 
     - [Range Variables - Code](#range-variables---code)
   - [Option Variables](#option-variables)
     - [Option Variables - Code](#option-variables---code)
+  - [Prefixless Environment Variables](#prefixless-environment-variables)
+    - [Prefixless Environment Variables - Code](#prefixless-environment-variables---code)
 - [Error Handling](#error-handling)
   - [Help Message](#help-message)
   - [Warnings and Errors](#warnings-and-errors)
@@ -337,6 +339,44 @@ _Note:_ Options are mostly intended to be used with `enum class` types, but this
 #### Option Variables - Code
 
 For the full code, including the parser for the enum class, see [examples/libenvpp_option_example.cpp](examples/libenvpp_option_example.cpp).
+
+### Prefixless Environment Variables
+
+Even though it is recommended to namespace environment variables with a prefix, and use the prefix mechanism of this library to parse those variables, sometimes it might be necessary to parse environment variables that don't have a prefix. To this end, this library also provides a mechanism for that:
+
+```cpp
+#include <cstdlib>
+#include <filesystem>
+#include <iostream>
+
+#include <libenvpp/env.hpp>
+
+int main()
+{
+    const auto log_path = env::get_or<std::filesystem::path>("LOG_FILE_PATH", "/default/log/path");
+    const auto num_threads = env::get<unsigned int>("NUM_THREADS");
+
+    if (num_threads.has_value()) {
+        std::cout << "Log path   : " << log_path << std::endl;
+        std::cout << "Num threads: " << num_threads.value() << std::endl;
+    } else {
+        std::cout << num_threads.error().what() << std::endl;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+```
+
+This is analogous to the simple usage example using a prefix. Required variables can be parsed using `env::get`, which either returns the parsed and validated value, or an error.
+
+Optional variables can be parsed and validated with `env::get_or` which will always return a value, either the successfully parsed and validated one from the environment, or the default value.
+
+_Note:_ These functions make use of the same `default_parser`/`default_validator` mechanism as the prefix, and so parsing/validating of user-defined types is also supported.
+
+#### Prefixless Environment Variables - Code
+
+For the code of this example, see [examples/libenvpp_prefixless_get_example.cpp](examples/libenvpp_prefixless_get_example.cpp).
 
 ## Error Handling
 
