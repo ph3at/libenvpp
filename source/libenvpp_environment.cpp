@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 #include <utility>
+#include <vector>
 
 #include <libenvpp/detail/levenshtein.hpp>
 
