@@ -47,13 +47,13 @@ namespace env::detail {
 
 void set_environment_variable(const std::string_view name, const std::string_view value)
 {
-	const auto env_var_was_set = setenv(std::string(name).c_str(), std::string(value).c_str(), true);
+	[[maybe_unused]] const auto env_var_was_set = setenv(std::string(name).c_str(), std::string(value).c_str(), true);
 	LIBENVPP_CHECK(env_var_was_set == 0);
 }
 
 void delete_environment_variable(const std::string_view name)
 {
-	const auto env_var_was_deleted = unsetenv(std::string(name).c_str());
+	[[maybe_unused]] const auto env_var_was_deleted = unsetenv(std::string(name).c_str());
 	LIBENVPP_CHECK(env_var_was_deleted == 0);
 }
 

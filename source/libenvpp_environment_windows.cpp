@@ -78,7 +78,7 @@ std::optional<std::wstring> convert_string(const std::string& str)
 	}
 	// -1 because std::string already contains implicit null terminator
 	auto value = std::wstring(buffer_size - 1, L'\0');
-	const auto env_var_got = GetEnvironmentVariableW(var_name->c_str(), value.data(), buffer_size);
+	[[maybe_unused]] const auto env_var_got = GetEnvironmentVariableW(var_name->c_str(), value.data(), buffer_size);
 	LIBENVPP_CHECK(env_var_got != 0);
 	return convert_string(value);
 }
