@@ -77,6 +77,7 @@ set(LIBENVPP_SOURCES
 file(GLOB_RECURSE LIBENVPP_INCLUDES "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 
 add_library(libenvpp STATIC ${LIBENVPP_SOURCES} ${LIBENVPP_INCLUDES})
+add_library(libenvpp::libenvpp ALIAS libenvpp)
 libenvpp_set_compiler_parameters(libenvpp)
 set_target_properties(libenvpp PROPERTIES PREFIX "")
 target_link_libraries(libenvpp PUBLIC fmt::fmt)
