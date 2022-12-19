@@ -23,7 +23,7 @@ endif()
 option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(LIBENVPP_TESTS "Build libenvpp tests." ${LIBENVPP_MASTER_PROJECT})
 option(LIBENVPP_EXAMPLES "Build libenvpp examples." ${LIBENVPP_MASTER_PROJECT})
-option(LIBENVPP_CHECKS "Enable additional runtime checks in release (always on in debug)." OFF)
+option(LIBENVPP_CHECKS "Enable additional runtime checks in release (always on in debug or when tests are enabled)." OFF)
 
 include(cmake/libenvpp_mt_utils.cmake)
 
@@ -43,7 +43,7 @@ function(libenvpp_set_compiler_parameters TARGET)
 		$<$<CXX_COMPILER_ID:MSVC>:/DEBUG /ignore:4099>
 	)
 	target_compile_definitions(${TARGET} PUBLIC
-		LIBENVPP_CHECKS_ENABLED=$<OR:$<BOOL:${LIBENVPP_CHECKS}>,$<CONFIG:DEBUG>>
+		LIBENVPP_CHECKS_ENABLED=$<OR:$<BOOL:${LIBENVPP_CHECKS}>,$<CONFIG:DEBUG>,$<BOOL:${LIBENVPP_TESTS}>>
 		LIBENVPP_TESTS_ENABLED=$<BOOL:${LIBENVPP_TESTS}>
 		LIBENVPP_PLATFORM_WINDOWS=$<BOOL:${WIN32}>
 		LIBENVPP_PLATFORM_UNIX=$<BOOL:${UNIX}>
