@@ -51,18 +51,21 @@ function(libenvpp_set_compiler_parameters TARGET)
 endfunction()
 
 # External dependencies.
-set(CMAKE_FOLDER "external/fmt")
-if(NOT TARGET fmt)
-	add_subdirectory(external/fmt)
-endif()
+include(FetchContent)
+FetchContent_Declare(fmt
+	GIT_REPOSITORY https://github.com/fmtlib/fmt.git
+	GIT_TAG 9.1.0
+)
+FetchContent_MakeAvailable(fmt)
+
 if(LIBENVPP_TESTS)
-	set(CMAKE_FOLDER "external/catch2")
-	if(NOT TARGET Catch2)
-		add_subdirectory(external/catch2)
-		include("external/catch2/extras/Catch.cmake")
-	endif()
+	FetchContent_Declare(Catch2
+		GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+		GIT_TAG v3.2.1
+	)
+	FetchContent_MakeAvailable(Catch2)
+	list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 endif()
-unset(CMAKE_FOLDER)
 
 # libenvpp library.
 set(LIBENVPP_SOURCES
@@ -90,6 +93,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${LIBENVPP_SOURCES} ${LIBENV
 # Unit tests.
 if(LIBENVPP_TESTS)
 	include(CTest)
+	include(Catch)
 	add_executable(libenvpp_tests
 		"test/levenshtein_test.cpp"
 		"test/libenvpp_environment_test.cpp"
