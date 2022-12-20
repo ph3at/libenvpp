@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+if(NOT TARGET libenvpp::libenvpp)
+	include(CMakeFindDependencyMacro)
+	find_dependency(fmt REQUIRED)
+
+	include(${CMAKE_CURRENT_LIST_DIR}/libenvpp-config-targets.cmake)
+endif()
+
+check_required_components(libenvpp)

@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 cmake_policy(SET CMP0091 NEW) # MSVC_RUNTIME_LIBRARY
 
 project(libenvpp LANGUAGES CXX)
+set(LIBENVPP_VERSION "1.0.0")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -24,12 +25,14 @@ option(BUILD_SHARED_LIBS "Build shared libs" OFF)
 option(LIBENVPP_TESTS "Build libenvpp tests." ${LIBENVPP_MASTER_PROJECT})
 option(LIBENVPP_EXAMPLES "Build libenvpp examples." ${LIBENVPP_MASTER_PROJECT})
 option(LIBENVPP_CHECKS "Enable additional runtime checks in release (always on in debug or when tests are enabled)." OFF)
+option(LIBENVPP_INSTALL "Enable installation target for libenvpp." OFF)
 
 include(cmake/libenvpp_mt_utils.cmake)
 
 # Function for setting compiler-specific parameters.
 function(libenvpp_set_compiler_parameters TARGET)
 	set_target_properties(${TARGET} PROPERTIES
+		VERSION ${LIBENVPP_VERSION}
 		CXX_STANDARD 17
 		CXX_EXTENSIONS OFF
 	)
@@ -51,6 +54,9 @@ function(libenvpp_set_compiler_parameters TARGET)
 endfunction()
 
 # External dependencies.
+if(LIBENVPP_INSTALL)
+	set(FMT_INSTALL ON CACHE BOOL "" FORCE)
+endif()
 include(FetchContent)
 FetchContent_Declare(fmt
 	GIT_REPOSITORY https://github.com/fmtlib/fmt.git
@@ -85,7 +91,8 @@ libenvpp_set_compiler_parameters(libenvpp)
 set_target_properties(libenvpp PROPERTIES PREFIX "")
 target_link_libraries(libenvpp PUBLIC fmt::fmt)
 target_include_directories(libenvpp PUBLIC
-	"${CMAKE_CURRENT_SOURCE_DIR}/include"
+	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${LIBENVPP_SOURCES} ${LIBENVPP_INCLUDES})
@@ -120,4 +127,35 @@ if(LIBENVPP_EXAMPLES)
 		libenvpp_set_compiler_parameters(${LIBENVPP_EXAMPLE_TARGET})
 		target_link_libraries(${LIBENVPP_EXAMPLE_TARGET} PRIVATE libenvpp)
 	endforeach()
+endif()
+
+# Installation target.
+if(LIBENVPP_INSTALL)
+	# Libenvpp installation.
+	set(LIBENVPP_PROJECT_CONFIG_OUT "${CMAKE_CURRENT_BINARY_DIR}/libenvpp-config.cmake")
+	set(LIBENVPP_VERSION_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/libenvpp-config-version.cmake")
+	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
+		DESTINATION include/
+	)
+	install(TARGETS libenvpp
+		EXPORT libenvpp
+		LIBRARY DESTINATION lib
+		ARCHIVE DESTINATION lib
+	)
+	install(EXPORT libenvpp
+		DESTINATION lib/cmake/libenvpp
+		NAMESPACE libenvpp::
+		FILE libenvpp-config-targets.cmake
+	)
+	configure_package_config_file(cmake/libenvpp-config.cmake.in
+		"${LIBENVPP_PROJECT_CONFIG_OUT}"
+		INSTALL_DESTINATION lib/cmake/libenvpp
+	)
+	write_basic_package_version_file("${LIBENVPP_VERSION_CONFIG_FILE}"
+		VERSION ${LIBENVPP_VERSION}
+		COMPATIBILITY SameMajorVersion
+	)
+	install(FILES "${LIBENVPP_PROJECT_CONFIG_OUT}" "${LIBENVPP_VERSION_CONFIG_FILE}"
+		DESTINATION lib/cmake/libenvpp
+	)
 endif()
