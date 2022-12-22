@@ -27,6 +27,8 @@ This library provides a modern, platform independent, type-safe way of handling 
     - [Errors](#errors)
   - [Warnings and Errors - Code](#warnings-and-errors---code)
 - [Installation](#installation)
+  - [FetchContent](#fetchcontent)
+  - [Submodule](#submodule)
   - [Cmake Options](#cmake-options)
 
 ## Features
@@ -448,12 +450,47 @@ For an example of how the warning/error handling functions can be used, see [exa
 
 ## Installation
 
+### FetchContent
+
+Libenvpp can be integrated into a cmake project (`myproject`) using the FetchContent mechanism like this:
+
+`CMakeLists.txt`:
+
+```cmake
+set(LIBENVPP_INSTALL ON CACHE BOOL "" FORCE) # If installation is desired.
+FetchContent_Declare(libenvpp
+    GIT_REPOSITORY https://github.com/ph3at/libenvpp.git
+    GIT_TAG v1.0.0
+)
+FetchContent_MakeAvailable(libenvpp)
+
+# ...
+
+target_link_libraries(myproject PUBLIC
+    libenvpp::libenvpp
+)
+```
+
+`myproject-config.cmake.in` (only required if installation is desired):
+
+```cmake
+# ...
+
+include(CMakeFindDependencyMacro)
+find_dependency(libenvpp REQUIRED)
+
+# ...
+```
+
+### Submodule
+
 The library uses cmake as the build system and can be easily integrated into an existing cmake project by adding it with `add_subdirectory`, ideally used in combination with a git submodule of the library. The build system will detect this use-case and automatically disable the building of examples and tests.
 
 ### Cmake Options
 
-| Option              | Default                                                    | Description                                                                                                                                               |
-|---------------------|------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `LIBENVPP_EXAMPLES` | `ON` if configured standalone, `OFF` if used as dependency | Enables building of example programs.                                                                                                                     |
-| `LIBENVPP_TESTS`    | `ON` if configured standalone, `OFF` if used as dependency | Enables building of unit tests.                                                                                                                           |
-| `LIBENVPP_CHECKS`   | `ON` in debug builds, `OFF` in release builds              | Custom assertions that are not tied to `NDEBUG`, and are testable by throwing an exception instead of `std::abort`ing _iff_ `LIBENVPP_TESTS` are enabled. |
+| Option              | Default                                                                 | Description                                                                                                                                               |
+|---------------------|-------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `LIBENVPP_EXAMPLES` | `ON` if configured standalone, `OFF` if used as dependency              | Enables building of example programs.                                                                                                                     |
+| `LIBENVPP_TESTS`    | `ON` if configured standalone, `OFF` if used as dependency              | Enables building of unit tests.                                                                                                                           |
+| `LIBENVPP_CHECKS`   | `ON` in debug builds or when tests are enabled, `OFF` in release builds | Custom assertions that are not tied to `NDEBUG`, and are testable by throwing an exception instead of `std::abort`ing _iff_ `LIBENVPP_TESTS` are enabled. |
+| `LIBENVPP_INSTALL`  | `OFF`                                                                   | Adds an install target that can be used to install libenvpp as a library.                                                                                 |
