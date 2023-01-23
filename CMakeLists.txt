@@ -80,6 +80,7 @@ set(LIBENVPP_SOURCES
 	"source/libenvpp_environment_windows.cpp"
 	"source/libenvpp_environment.cpp"
 	"source/libenvpp_errors.cpp"
+	"source/libenvpp_testing.cpp"
 )
 
 # Add includes to library so they show up in IDEs.
@@ -106,6 +107,7 @@ if(LIBENVPP_TESTS)
 		"test/libenvpp_environment_test.cpp"
 		"test/libenvpp_parser_test.cpp"
 		"test/libenvpp_test.cpp"
+		"test/libenvpp_testing_test.cpp"
 	)
 	libenvpp_set_compiler_parameters(libenvpp_tests)
 	target_link_libraries(libenvpp_tests PRIVATE libenvpp Catch2::Catch2WithMain)

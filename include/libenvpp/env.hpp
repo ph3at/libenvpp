@@ -20,6 +20,7 @@
 #include <libenvpp/detail/errors.hpp>
 #include <libenvpp/detail/get.hpp>
 #include <libenvpp/detail/parser.hpp>
+#include <libenvpp/detail/testing.hpp>
 
 namespace env {
 
@@ -179,6 +180,8 @@ class parsed_and_validated_prefix {
 	parsed_and_validated_prefix(Prefix&& pre, std::unordered_map<std::string, std::string> environment)
 	    : m_prefix(std::move(pre))
 	{
+		environment = detail::merge_environments(detail::g_testing_environment, environment);
+
 		auto unparsed_env_vars = std::vector<std::size_t>{};
 
 		for (std::size_t id = 0; id < m_prefix.m_registered_vars.size(); ++id) {
