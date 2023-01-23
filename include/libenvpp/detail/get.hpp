@@ -9,6 +9,7 @@
 #include <libenvpp/detail/errors.hpp>
 #include <libenvpp/detail/expected.hpp>
 #include <libenvpp/detail/parser.hpp>
+#include <libenvpp/detail/testing.hpp>
 
 namespace env {
 
@@ -19,8 +20,12 @@ template <typename T>
 	using expected_t = expected<T, error>;
 	using unexpected_t = typename expected_t::unexpected_type;
 
-	if (const auto env_var_value = detail::get_environment_variable(env_var_name); env_var_value.has_value()) {
-		auto res = detail::parse_or_error<T>(env_var_name, *env_var_value, default_parser_and_validator<T>{});
+	// Merges the global testing environment into the environment considered for parsing and validating,
+	// giving precedence to variables set in the testing environment.
+	auto environment = detail::merge_environments(detail::g_testing_environment, detail::get_environment());
+
+	if (const auto env_var_it = environment.find(std::string(env_var_name)); env_var_it != environment.end()) {
+		auto res = detail::parse_or_error<T>(env_var_name, env_var_it->second, default_parser_and_validator<T>{});
 		if (res.has_value()) {
 			return expected_t{std::move(res).value()};
 		}
@@ -29,7 +34,6 @@ template <typename T>
 
 	const auto id = static_cast<std::size_t>(-1);
 	const auto edit_dist_cutoff = edit_distance_cutoff.get_or_default(env_var_name.length());
-	auto environment = detail::get_environment();
 	auto similar_env_var_error = detail::get_similar_env_var_error(id, env_var_name, edit_dist_cutoff, environment);
 	if (similar_env_var_error.has_value()) {
 		return expected_t{unexpected_t{std::move(similar_env_var_error).value()}};
@@ -40,8 +44,12 @@ template <typename T>
 template <typename T, typename U = T>
 [[nodiscard]] T get_or(const std::string_view env_var_name, U&& default_value)
 {
-	if (const auto env_var_value = detail::get_environment_variable(env_var_name); env_var_value.has_value()) {
-		auto res = detail::parse_or_error<T>(env_var_name, *env_var_value, default_parser_and_validator<T>{});
+	// Merges the global testing environment into the environment considered for parsing and validating,
+	// giving precedence to variables set in the testing environment.
+	const auto environment = detail::merge_environments(detail::g_testing_environment, detail::get_environment());
+
+	if (const auto env_var_it = environment.find(std::string(env_var_name)); env_var_it != environment.end()) {
+		auto res = detail::parse_or_error<T>(env_var_name, env_var_it->second, default_parser_and_validator<T>{});
 		if (res.has_value()) {
 			return std::move(res).value();
 		}
