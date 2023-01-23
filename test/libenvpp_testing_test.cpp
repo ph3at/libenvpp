@@ -133,4 +133,23 @@ TEST_CASE("Multiple scoped test environments", "[libenvpp_testing]")
 	}
 }
 
+TEST_CASE("Duplicate test environment entries are detected", "[libenvpp_testing]")
+{
+	const auto testing_env1 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "42"},
+	    {"LIBENVPP_TESTING_FLOAT", "3.1415"},
+	};
+
+	const auto testing_env2 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "24"},
+	    {"LIBENVPP_TESTING_FLOAT", "6.28318"},
+	};
+
+	const auto scoped_env1 = env::scoped_test_environment(testing_env1);
+
+	CHECK_THROWS_AS(env::scoped_test_environment(testing_env2), test_environment_error);
+	CHECK_THROWS_WITH(env::scoped_test_environment(testing_env2),
+	                  ContainsSubstring("'LIBENVPP_TESTING_INT'") || ContainsSubstring("'LIBENVPP_TESTING_FLOAT'"));
+}
+
 } // namespace env
