@@ -89,4 +89,48 @@ TEST_CASE("Retrieving integer with get_or from testing environment", "[libenvpp_
 	CHECK(int_value == 42);
 }
 
+TEST_CASE("Multiple scoped test environments", "[libenvpp_testing]")
+{
+	const auto testing_env1 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING1_INT", "42"},
+	    {"LIBENVPP_TESTING1_FLOAT", "3.1415"},
+	};
+
+	const auto testing_env2 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING2_INT", "24"},
+	    {"LIBENVPP_TESTING2_FLOAT", "6.28318"},
+	};
+
+	const auto scoped_env1 = env::scoped_test_environment(testing_env1);
+	const auto scoped_env2 = env::scoped_test_environment(testing_env2);
+
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING1");
+		const auto int_id = pre.register_variable<int>("INT");
+		const auto float_id = pre.register_variable<float>("FLOAT");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		REQUIRE(parsed_and_validated_pre.ok());
+		const auto int_val = parsed_and_validated_pre.get(int_id);
+		REQUIRE(int_val.has_value());
+		CHECK(*int_val == 42);
+		const auto float_val = parsed_and_validated_pre.get(float_id);
+		REQUIRE(float_val.has_value());
+		CHECK(*float_val == 3.1415f);
+	}
+
+	{
+		auto pre = env::prefix("LIBENVPP_TESTING2");
+		const auto int_id = pre.register_variable<int>("INT");
+		const auto float_id = pre.register_variable<float>("FLOAT");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		REQUIRE(parsed_and_validated_pre.ok());
+		const auto int_val = parsed_and_validated_pre.get(int_id);
+		REQUIRE(int_val.has_value());
+		CHECK(*int_val == 24);
+		const auto float_val = parsed_and_validated_pre.get(float_id);
+		REQUIRE(float_val.has_value());
+		CHECK(*float_val == 6.28318f);
+	}
+}
+
 } // namespace env
