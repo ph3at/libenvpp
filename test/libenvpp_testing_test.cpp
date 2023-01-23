@@ -211,4 +211,60 @@ TEST_CASE("Global testing environment is modified correctly", "[libenvpp_testing
 	check_env2(false);
 }
 
+TEST_CASE("Global testing environment takes precedence over environment variables", "[libenvpp_testing]")
+{
+	const auto scoped_env_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_INT", "7"};
+
+	{
+		const auto scoped_env1 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
+		    {"LIBENVPP_TESTING_INT", "42"},
+		});
+
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto int_id = pre.register_variable<int>("INT");
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+		REQUIRE(parsed_and_validated_pre.ok());
+		const auto int_val = parsed_and_validated_pre.get(int_id);
+		REQUIRE(int_val.has_value());
+		CHECK(*int_val == 42);
+	}
+
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto int_id = pre.register_variable<int>("INT");
+	auto parsed_and_validated_pre = pre.parse_and_validate();
+	REQUIRE(parsed_and_validated_pre.ok());
+	const auto int_val = parsed_and_validated_pre.get(int_id);
+	REQUIRE(int_val.has_value());
+	CHECK(*int_val == 7);
+}
+
+TEST_CASE("Global testing environment takes precedence over custom environment", "[libenvpp_testing]")
+{
+	{
+		const auto scoped_env1 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
+		    {"LIBENVPP_TESTING_INT", "42"},
+		});
+
+		auto pre = env::prefix("LIBENVPP_TESTING");
+		const auto int_id = pre.register_variable<int>("INT");
+		auto parsed_and_validated_pre = pre.parse_and_validate(std::unordered_map<std::string, std::string>{
+		    {"LIBENVPP_TESTING_INT", "7"},
+		});
+		REQUIRE(parsed_and_validated_pre.ok());
+		const auto int_val = parsed_and_validated_pre.get(int_id);
+		REQUIRE(int_val.has_value());
+		CHECK(*int_val == 42);
+	}
+
+	auto pre = env::prefix("LIBENVPP_TESTING");
+	const auto int_id = pre.register_variable<int>("INT");
+	auto parsed_and_validated_pre = pre.parse_and_validate(std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "7"},
+	});
+	REQUIRE(parsed_and_validated_pre.ok());
+	const auto int_val = parsed_and_validated_pre.get(int_id);
+	REQUIRE(int_val.has_value());
+	CHECK(*int_val == 7);
+}
+
 } // namespace env
