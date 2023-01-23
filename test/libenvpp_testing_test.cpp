@@ -32,4 +32,29 @@ TEST_CASE("Retrieving integer from testing environment", "[libenvpp_testing]")
 	CHECK(*int_val == 42);
 }
 
+TEST_CASE("Retrieving integer with get from testing environment", "[libenvpp_testing]")
+{
+	const auto testing_env = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "42"},
+	};
+
+	const auto _ = env::scoped_test_environment(testing_env);
+
+	const auto int_value = get<int>("LIBENVPP_TESTING_INT");
+	REQUIRE(int_value.has_value());
+	CHECK(*int_value == 42);
+}
+
+TEST_CASE("Retrieving integer with get_or from testing environment", "[libenvpp_testing]")
+{
+	const auto testing_env = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "42"},
+	};
+
+	const auto _ = env::scoped_test_environment(testing_env);
+
+	const auto int_value = get_or<int>("LIBENVPP_TESTING_INT", 7);
+	CHECK(int_value == 42);
+}
+
 } // namespace env

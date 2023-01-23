@@ -180,6 +180,8 @@ class parsed_and_validated_prefix {
 	parsed_and_validated_prefix(Prefix&& pre, std::unordered_map<std::string, std::string> environment)
 	    : m_prefix(std::move(pre))
 	{
+		// Merges the global testing environment into the environment considered for parsing and validating,
+		// giving precedence to variables set in the testing environment.
 		environment = detail::merge_environments(detail::g_testing_environment, environment);
 
 		auto unparsed_env_vars = std::vector<std::size_t>{};
