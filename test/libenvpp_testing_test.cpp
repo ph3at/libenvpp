@@ -151,4 +151,64 @@ TEST_CASE("Duplicate test environment entries are detected", "[libenvpp_testing]
 	                  ContainsSubstring("'LIBENVPP_TESTING_INT'") || ContainsSubstring("'LIBENVPP_TESTING_FLOAT'"));
 }
 
+TEST_CASE("Global testing environment is modified correctly", "[libenvpp_testing]")
+{
+	CHECK(detail::g_testing_environment.empty());
+
+	const auto testing_env1 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING1_INT", "42"},
+	    {"LIBENVPP_TESTING1_FLOAT", "3.1415"},
+	};
+
+	const auto testing_env2 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING2_INT", "24"},
+	    {"LIBENVPP_TESTING2_FLOAT", "6.28318"},
+	};
+
+	constexpr auto check_env1 = [](bool contains = true) {
+		CHECK((detail::g_testing_environment.find("LIBENVPP_TESTING1_INT") != detail::g_testing_environment.end())
+		      == contains);
+		CHECK((detail::g_testing_environment.find("LIBENVPP_TESTING1_FLOAT") != detail::g_testing_environment.end())
+		      == contains);
+		if (contains) {
+			CHECK(detail::g_testing_environment["LIBENVPP_TESTING1_INT"] == "42");
+			CHECK(detail::g_testing_environment["LIBENVPP_TESTING1_FLOAT"] == "3.1415");
+		}
+	};
+
+	constexpr auto check_env2 = [](bool contains = true) {
+		CHECK((detail::g_testing_environment.find("LIBENVPP_TESTING2_INT") != detail::g_testing_environment.end())
+		      == contains);
+		CHECK((detail::g_testing_environment.find("LIBENVPP_TESTING2_FLOAT") != detail::g_testing_environment.end())
+		      == contains);
+		if (contains) {
+			CHECK(detail::g_testing_environment["LIBENVPP_TESTING2_INT"] == "24");
+			CHECK(detail::g_testing_environment["LIBENVPP_TESTING2_FLOAT"] == "6.28318");
+		}
+	};
+
+	{
+		const auto scoped_env1 = env::scoped_test_environment(testing_env1);
+
+		CHECK(detail::g_testing_environment.size() == 2);
+		check_env1(true);
+		check_env2(false);
+
+		{
+			const auto scoped_env2 = env::scoped_test_environment(testing_env2);
+			CHECK(detail::g_testing_environment.size() == 4);
+			check_env1(true);
+			check_env2(true);
+		}
+
+		CHECK(detail::g_testing_environment.size() == 2);
+		check_env1(true);
+		check_env2(false);
+	}
+
+	CHECK(detail::g_testing_environment.empty());
+	check_env1(false);
+	check_env2(false);
+}
+
 } // namespace env
