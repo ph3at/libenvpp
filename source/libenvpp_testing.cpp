@@ -23,8 +23,7 @@ merge_environments(const std::unordered_map<std::string, std::string>& high_prec
 
 } // namespace detail
 
-[[nodiscard]] scoped_test_environment::scoped_test_environment(
-    const std::unordered_map<std::string, std::string>& environment)
+scoped_test_environment::scoped_test_environment(const std::unordered_map<std::string, std::string>& environment)
     : m_environment(environment)
 {
 	for (const auto& [name, value] : m_environment) {

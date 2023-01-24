@@ -15,9 +15,9 @@ merge_environments(const std::unordered_map<std::string, std::string>& high_prec
 
 } // namespace detail
 
-class scoped_test_environment {
+class [[nodiscard]] scoped_test_environment {
   public:
-	[[nodiscard]] scoped_test_environment(const std::unordered_map<std::string, std::string>& environment);
+	scoped_test_environment(const std::unordered_map<std::string, std::string>& environment);
 	~scoped_test_environment();
 
   private:
