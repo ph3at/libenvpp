@@ -269,4 +269,51 @@ TEST_CASE("Global testing environment takes precedence over custom environment",
 	CHECK(*int_val == 7);
 }
 
+TEST_CASE("Global testing environment takes precedence for prefixless variables", "[libenvpp_testing]")
+{
+	const auto scoped_env_var = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_INT", "7"};
+
+	SECTION("get from environment variable")
+	{
+		const auto int_value = get<int>("LIBENVPP_TESTING_INT");
+		REQUIRE(int_value.has_value());
+		CHECK(*int_value == 7);
+	}
+	SECTION("get_or from environment variable")
+	{
+		const auto int_value = get_or<int>("LIBENVPP_TESTING_INT", 4);
+		CHECK(int_value == 7);
+	}
+
+	{
+		const auto scoped_env1 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
+		    {"LIBENVPP_TESTING_INT", "42"},
+		});
+
+		SECTION("get from testing environment")
+		{
+			const auto int_value = get<int>("LIBENVPP_TESTING_INT");
+			REQUIRE(int_value.has_value());
+			CHECK(*int_value == 42);
+		}
+		SECTION("get_or from testing environment")
+		{
+			const auto int_value = get_or<int>("LIBENVPP_TESTING_INT", 4);
+			CHECK(int_value == 42);
+		}
+	}
+
+	SECTION("get from environment variable after testing scope")
+	{
+		const auto int_value = get<int>("LIBENVPP_TESTING_INT");
+		REQUIRE(int_value.has_value());
+		CHECK(*int_value == 7);
+	}
+	SECTION("get_or from environment variable after testing scope")
+	{
+		const auto int_value = get_or<int>("LIBENVPP_TESTING_INT", 4);
+		CHECK(int_value == 7);
+	}
+}
+
 } // namespace env
