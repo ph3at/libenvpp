@@ -26,6 +26,13 @@ This library provides a modern, platform independent, type-safe way of handling 
     - [Warnings](#warnings)
     - [Errors](#errors)
   - [Warnings and Errors - Code](#warnings-and-errors---code)
+- [Testing](#testing)
+  - [Global Testing Environment](#global-testing-environment)
+    - [Global Testing Environment - Code](#global-testing-environment---code)
+  - [Custom Environment](#custom-environment)
+    - [Custom Environment - Code](#custom-environment---code)
+  - [Set for Testing](#set-for-testing)
+    - [Set for Testing - Code](#set-for-testing---code)
 - [Installation](#installation)
   - [FetchContent](#fetchcontent)
   - [Submodule](#submodule)
@@ -447,6 +454,63 @@ The following situations will generate an error:
 ### Warnings and Errors - Code
 
 For an example of how the warning/error handling functions can be used, see [examples/libenvpp_error_handling_example.cpp](examples/libenvpp_error_handling_example.cpp).
+
+## Testing
+
+There are a few ways that help facilitate (unit) testing.
+
+### Global Testing Environment
+
+Libenvpp provides an internal global testing environment where variables can be added as key/value pairs using `env::scoped_test_environment`:
+
+```cpp
+const auto _ = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
+    {"MYPROG_LOG_FILE_PATH", "/dev/null"},
+    {"MYPROG_NUM_THREADS", "8"},
+});
+```
+
+Once the scoped test environment instance goes out of scope, the variables it added to the global test environment are automatically removed.
+
+Any libenvpp function that usually retrieves variables from the system environment will first check if the global test environment contains a value for the requested variable and retrieve that instead. This can be used to facilitate unit testing without having to change the usage of libenvpp.
+
+_Note:_ Any value set in the global testing environment will take precedence over system/custom environment variables.
+
+_Note:_ Interacting with the global testing environment is not thread safe and the user must take care to synchronize any potentially conflicting accesses.
+
+#### Global Testing Environment - Code
+
+A complete example of how to use the global testing environment, see [examples/libenvpp_testing_example.cpp](examples/libenvpp_testing_example.cpp).
+
+### Custom Environment
+
+Another mechanism that can be used for testing is the ability to pass a custom environment to `prefix::parse_and_validate` as the first parameter of type `std::unordered_map<std::string, std::string>`.
+
+Environment variables will then be fetched from there instead of the system environment. Note that the global testing environment will still take precedence over the custom environment and if the variable is not found in the testing environment or the custom environment **no** fallback to the system environment will be performed.
+
+#### Custom Environment - Code
+
+A complete example of how to use a custom environment can be found here: [examples/libenvpp_custom_environment_example.cpp](examples/libenvpp_custom_environment_example.cpp)
+
+### Set for Testing
+
+Additionally it is also possible to bypass parsing and validating completely and directly set the value for a registered variable on a prefix.
+
+```cpp
+auto pre = env::prefix("MYPROG");
+
+const auto log_path_id = pre.register_variable<std::filesystem::path>("LOG_FILE_PATH");
+const auto num_threads_id = pre.register_required_variable<unsigned int>("NUM_THREADS");
+
+pre.set_for_testing(log_path_id, "/dev/null");
+pre.set_for_testing(num_threads_id, 8);
+```
+
+This will ignore any value for that variable in the testing/system/custom environment and not perform any parsing or validating and just directly return the set value when using `get`/`get_or` on the parsed and validated prefix.
+
+#### Set for Testing - Code
+
+A complete example of how to use `set_for_testing` can be found here: [examples/libenvpp_set_for_testing_example.cpp](examples/libenvpp_set_for_testing_example.cpp).
 
 ## Installation
 
