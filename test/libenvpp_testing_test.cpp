@@ -240,16 +240,20 @@ TEST_CASE("Global testing environment takes precedence over environment variable
 
 TEST_CASE("Global testing environment takes precedence over custom environment", "[libenvpp_testing]")
 {
+	const auto testing_env1 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "42"},
+	};
+
+	const auto testing_env2 = std::unordered_map<std::string, std::string>{
+	    {"LIBENVPP_TESTING_INT", "7"},
+	};
+
 	{
-		const auto scoped_env1 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
-		    {"LIBENVPP_TESTING_INT", "42"},
-		});
+		const auto scoped_env1 = env::scoped_test_environment(testing_env1);
 
 		auto pre = env::prefix("LIBENVPP_TESTING");
 		const auto int_id = pre.register_variable<int>("INT");
-		auto parsed_and_validated_pre = pre.parse_and_validate(std::unordered_map<std::string, std::string>{
-		    {"LIBENVPP_TESTING_INT", "7"},
-		});
+		auto parsed_and_validated_pre = pre.parse_and_validate(testing_env2);
 		REQUIRE(parsed_and_validated_pre.ok());
 		const auto int_val = parsed_and_validated_pre.get(int_id);
 		REQUIRE(int_val.has_value());
@@ -258,9 +262,7 @@ TEST_CASE("Global testing environment takes precedence over custom environment",
 
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	const auto int_id = pre.register_variable<int>("INT");
-	auto parsed_and_validated_pre = pre.parse_and_validate(std::unordered_map<std::string, std::string>{
-	    {"LIBENVPP_TESTING_INT", "7"},
-	});
+	auto parsed_and_validated_pre = pre.parse_and_validate(testing_env2);
 	REQUIRE(parsed_and_validated_pre.ok());
 	const auto int_val = parsed_and_validated_pre.get(int_id);
 	REQUIRE(int_val.has_value());
