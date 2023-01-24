@@ -330,11 +330,11 @@ class prefix {
 		return registration_option_helper<T, true>(name, options);
 	}
 
-	template <typename T, bool IsRequired>
-	void set_for_testing(const variable_id<T, IsRequired>& var_id, const T& value)
+	template <typename T, bool IsRequired, typename U = T>
+	void set_for_testing(const variable_id<T, IsRequired>& var_id, const U& value)
 	{
 		throw_if_invalid();
-		m_registered_vars[var_id.m_idx].m_value = value;
+		m_registered_vars[var_id.m_idx].m_value = static_cast<T>(value);
 	}
 
 	[[nodiscard]] parsed_and_validated_prefix<prefix>
