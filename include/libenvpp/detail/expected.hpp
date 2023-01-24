@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 #include <utility>
 #include <variant>
 
@@ -8,11 +9,12 @@ namespace env {
 template <typename E>
 class unexpected {
   public:
-	constexpr unexpected(const unexpected&) = default;
-	constexpr unexpected(unexpected&&) = default;
+	constexpr unexpected(const unexpected&) noexcept(std::is_nothrow_copy_constructible_v<E>) = default;
+	constexpr unexpected(unexpected&&) noexcept(std::is_nothrow_move_constructible_v<E>) = default;
 
 	template <typename Err = E>
-	constexpr explicit unexpected(Err&& e) : m_error(std::forward<Err>(e))
+	constexpr explicit unexpected(Err&& e) noexcept(std::is_nothrow_constructible_v<E, Err>)
+	    : m_error(std::forward<Err>(e))
 	{}
 
 	[[nodiscard]] constexpr const E& error() const& noexcept { return m_error; }
@@ -33,43 +35,54 @@ class expected {
 	template <typename U>
 	using rebind = expected<U, error_type>;
 
-	constexpr expected() noexcept : expected(T()) {}
+	constexpr expected() noexcept(std::is_nothrow_constructible_v<expected, T>) : expected(T()) {}
 
-	constexpr expected(const expected&) = default;
-	constexpr expected(expected&&) noexcept = default;
+	constexpr expected(const expected&) noexcept(
+	    std::is_nothrow_copy_constructible_v<std::variant<T, unexpected_type>>) = default;
+	constexpr expected(expected&&) noexcept(std::is_nothrow_move_constructible_v<std::variant<T, unexpected_type>>) =
+	    default;
 
-	constexpr expected& operator=(const expected&) = default;
-	constexpr expected& operator=(expected&&) noexcept = default;
+	constexpr expected&
+	operator=(const expected&) noexcept(std::is_nothrow_copy_assignable_v<std::variant<T, unexpected_type>>) = default;
+	constexpr expected&
+	operator=(expected&&) noexcept(std::is_nothrow_move_assignable_v<std::variant<T, unexpected_type>>) = default;
 
 	template <typename U = T>
-	constexpr explicit expected(U&& value) : m_value_or_error(static_cast<T>(std::forward<U>(value)))
+	constexpr explicit expected(U&& value) noexcept(
+	    std::is_nothrow_constructible_v<std::variant<T, unexpected_type>, T>)
+	    : m_value_or_error(static_cast<T>(std::forward<U>(value)))
 	{}
 
 	template <typename G>
-	constexpr explicit expected(const unexpected<G>& e) : m_value_or_error(unexpected_type{static_cast<E>(e.error())})
+	constexpr explicit expected(const unexpected<G>& e) noexcept(
+	    std::is_nothrow_constructible_v<std::variant<T, unexpected_type>, unexpected_type>)
+	    : m_value_or_error(unexpected_type{static_cast<E>(e.error())})
 	{}
 
 	template <typename G>
-	constexpr explicit expected(unexpected<G>&& e)
+	constexpr explicit expected(unexpected<G>&& e) noexcept(
+	    std::is_nothrow_constructible_v<std::variant<T, unexpected_type>, unexpected_type>)
 	    : m_value_or_error(unexpected_type{static_cast<E>(std::move(e).error())})
 	{}
 
 	template <typename U = T>
-	constexpr expected& operator=(U&& value)
+	constexpr expected& operator=(U&& value) noexcept(std::is_nothrow_assignable_v<std::variant<T, unexpected_type>, T>)
 	{
 		m_value_or_error = static_cast<T>(std::forward<U>(value));
 		return *this;
 	}
 
 	template <typename G>
-	constexpr expected& operator=(const unexpected<G>& e)
+	constexpr expected& operator=(const unexpected<G>& e) noexcept(
+	    std::is_nothrow_assignable_v<std::variant<T, unexpected_type>, unexpected_type>)
 	{
 		m_value_or_error = unexpected_type{static_cast<E>(e.error())};
 		return *this;
 	}
 
 	template <typename G>
-	constexpr expected& operator=(unexpected<G>&& e)
+	constexpr expected& operator=(unexpected<G>&& e) noexcept(
+	    std::is_nothrow_assignable_v<std::variant<T, unexpected_type>, unexpected_type>)
 	{
 		m_value_or_error = unexpected_type{static_cast<E>(std::move(e).error())};
 		return *this;
