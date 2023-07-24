@@ -36,6 +36,11 @@ scoped_test_environment::scoped_test_environment(const std::unordered_map<std::s
 	}
 }
 
+scoped_test_environment::scoped_test_environment(const std::string_view name, const std::string_view value)
+    : scoped_test_environment(std::unordered_map<std::string, std::string>{{std::string(name), std::string(value)}})
+{
+}
+
 scoped_test_environment::~scoped_test_environment()
 {
 	for (const auto& [name, _] : m_environment) {

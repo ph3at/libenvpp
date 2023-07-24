@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 
 namespace env {
@@ -17,6 +18,7 @@ merge_environments(const std::unordered_map<std::string, std::string>& high_prec
 
 class [[nodiscard]] scoped_test_environment {
   public:
+	scoped_test_environment(const std::string_view name, const std::string_view value);
 	scoped_test_environment(const std::unordered_map<std::string, std::string>& environment);
 	~scoped_test_environment();
 

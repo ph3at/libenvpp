@@ -6,7 +6,7 @@
 
 int main()
 {
-	const auto _ = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
+	const auto _ = env::scoped_test_environment({
 	    {"MYPROG_LOG_FILE_PATH", "/dev/null"},
 	    {"MYPROG_NUM_THREADS", "8"},
 	});

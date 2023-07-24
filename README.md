@@ -464,7 +464,7 @@ There are a few ways that help facilitate (unit) testing.
 Libenvpp provides an internal global testing environment where variables can be added as key/value pairs using `env::scoped_test_environment`:
 
 ```cpp
-const auto _ = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
+const auto _ = env::scoped_test_environment({
     {"MYPROG_LOG_FILE_PATH", "/dev/null"},
     {"MYPROG_NUM_THREADS", "8"},
 });
