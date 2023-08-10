@@ -45,7 +45,8 @@ class variable_data {
   private:
 	variable_data(const std::string_view name, bool is_required, parser_and_validator_fn parser_and_validator)
 	    : m_name(name), m_is_required(is_required), m_parser_and_validator(std::move(parser_and_validator))
-	{}
+	{
+	}
 
 	std::string m_name;
 	bool m_is_required;
@@ -333,9 +334,8 @@ class prefix {
 	void register_deprecated(const std::string_view name, const std::string_view deprecation_message)
 	{
 		std::string dm{deprecation_message};
-		m_registered_vars.push_back(detail::variable_data{name, false, [dm](const std::string_view) -> std::any {
-			throw validation_error(dm);
-		}});
+		m_registered_vars.push_back(detail::variable_data{
+		    name, false, [dm](const std::string_view) -> std::any { throw validation_error(dm); }});
 	}
 
 	template <typename T, bool IsRequired, typename U = T>

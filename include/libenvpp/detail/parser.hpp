@@ -23,7 +23,8 @@ struct is_string_constructible : std::conditional_t<                            
                                      std::is_constructible_v<T, std::string_view>    //
                                          || std::is_constructible_v<T, std::string>, //
                                      std::true_type,                                 //
-                                     std::false_type> {};
+                                     std::false_type> {
+};
 
 template <typename T>
 inline constexpr auto is_string_constructible_v = is_string_constructible<T>::value;
@@ -31,11 +32,13 @@ inline constexpr auto is_string_constructible_v = is_string_constructible<T>::va
 //////////////////////////////////////////////////////////////////////////
 
 template <typename T, typename = void>
-struct has_stringstream_operator_right_shift : std::false_type {};
+struct has_stringstream_operator_right_shift : std::false_type {
+};
 
 template <typename T>
 struct has_stringstream_operator_right_shift<
-    T, std::void_t<decltype(std::declval<std::istringstream&>() >> std::declval<T&>())>> : std::true_type {};
+    T, std::void_t<decltype(std::declval<std::istringstream&>() >> std::declval<T&>())>> : std::true_type {
+};
 
 template <typename T>
 inline constexpr auto has_stringstream_operator_right_shift_v = has_stringstream_operator_right_shift<T>::value;
@@ -43,7 +46,8 @@ inline constexpr auto has_stringstream_operator_right_shift_v = has_stringstream
 template <typename T>
 struct is_stringstream_constructible
     : std::conjunction<has_stringstream_operator_right_shift<T>, std::negation<std::is_same<T, char*>>,
-                       std::negation<std::is_reference<T>>> {};
+                       std::negation<std::is_reference<T>>> {
+};
 
 template <typename T>
 inline constexpr auto is_stringstream_constructible_v = is_stringstream_constructible<T>::value;

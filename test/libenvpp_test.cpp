@@ -995,10 +995,16 @@ TEST_CASE("Invalidated prefix throws", "[libenvpp]")
 	const auto var_id = pre.register_variable<int>("INT");
 	pre.set_for_testing(var_id, 7);
 
-	SECTION("Parsing prefix invalidates it") { auto parsed_and_validated_pre = pre.parse_and_validate(); }
+	SECTION("Parsing prefix invalidates it")
+	{
+		auto parsed_and_validated_pre = pre.parse_and_validate();
+	}
 	SECTION("Moving prefix invalidates it")
 	{
-		SECTION("Move construction") { auto moved_pre = std::move(pre); }
+		SECTION("Move construction")
+		{
+			auto moved_pre = std::move(pre);
+		}
 		SECTION("Move assignment")
 		{
 			auto moved_pre = std::move(pre);
@@ -1187,7 +1193,8 @@ TEST_CASE("Errors yield default value with get_or", "[libenvpp][get]")
 TEST_CASE("Deprecated environment variables work as expected", "[libenvpp][deprecated]")
 {
 	auto pre = env::prefix("TEST");
-	pre.register_deprecated("DEPRECATED", "The option 'TEST_DEPRECATED' has been deprecated since v1.0. Use 'TEST_NONDEPRECATED'.");
+	pre.register_deprecated("DEPRECATED",
+	                        "The option 'TEST_DEPRECATED' has been deprecated since v1.0. Use 'TEST_NONDEPRECATED'.");
 
 	SECTION("Nothing happens when not set")
 	{
@@ -1197,7 +1204,7 @@ TEST_CASE("Deprecated environment variables work as expected", "[libenvpp][depre
 
 	SECTION("Deprecation error when set")
 	{
-		auto parsed = pre.parse_and_validate({{"TEST_DEPRECATED","bla"}});
+		auto parsed = pre.parse_and_validate({{"TEST_DEPRECATED", "bla"}});
 		CHECK_FALSE(parsed.ok());
 		CHECK_THAT(parsed.error_message(), ContainsSubstring("'TEST_DEPRECATED' has been deprecated"));
 	}

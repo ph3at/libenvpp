@@ -80,7 +80,8 @@ class error {
 	error() = delete;
 	error(const std::size_t var_idx, const std::string_view var_name, const std::string_view error_message)
 	    : m_var_idx(var_idx), m_var_name(var_name), m_error_message(error_message)
-	{}
+	{
+	}
 
 	error(const error&) = delete;
 	error(error&&) = default;

@@ -15,7 +15,8 @@ class unexpected {
 	template <typename Err = E>
 	constexpr explicit unexpected(Err&& e) noexcept(std::is_nothrow_constructible_v<E, Err>)
 	    : m_error(std::forward<Err>(e))
-	{}
+	{
+	}
 
 	[[nodiscard]] constexpr const E& error() const& noexcept { return m_error; }
 	[[nodiscard]] constexpr E& error() & noexcept { return m_error; }
@@ -51,19 +52,22 @@ class expected {
 	constexpr explicit expected(U&& value) noexcept(
 	    std::is_nothrow_constructible_v<std::variant<T, unexpected_type>, T>)
 	    : m_value_or_error(static_cast<T>(std::forward<U>(value)))
-	{}
+	{
+	}
 
 	template <typename G>
 	constexpr explicit expected(const unexpected<G>& e) noexcept(
 	    std::is_nothrow_constructible_v<std::variant<T, unexpected_type>, unexpected_type>)
 	    : m_value_or_error(unexpected_type{static_cast<E>(e.error())})
-	{}
+	{
+	}
 
 	template <typename G>
 	constexpr explicit expected(unexpected<G>&& e) noexcept(
 	    std::is_nothrow_constructible_v<std::variant<T, unexpected_type>, unexpected_type>)
 	    : m_value_or_error(unexpected_type{static_cast<E>(std::move(e).error())})
-	{}
+	{
+	}
 
 	template <typename U = T>
 	constexpr expected& operator=(U&& value) noexcept(std::is_nothrow_assignable_v<std::variant<T, unexpected_type>, T>)
