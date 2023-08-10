@@ -17,6 +17,7 @@ This library provides a modern, platform independent, type-safe way of handling 
     - [Range Variables - Code](#range-variables---code)
   - [Option Variables](#option-variables)
     - [Option Variables - Code](#option-variables---code)
+  - [Deprecated Variables](#deprecated-variables)
   - [Prefixless Environment Variables](#prefixless-environment-variables)
     - [Prefixless Environment Variables - Code](#prefixless-environment-variables---code)
 - [Error Handling](#error-handling)
@@ -348,6 +349,20 @@ _Note:_ Options are mostly intended to be used with `enum class` types, but this
 #### Option Variables - Code
 
 For the full code, including the parser for the enum class, see [examples/libenvpp_option_example.cpp](examples/libenvpp_option_example.cpp).
+
+### Deprecated Variables
+
+Sometimes, new releases of your software will deprecate environment variables. To provide users with helpful messages in this case, you can use the 'register_deprecated' feature.
+
+```cpp
+#include <libenvpp/env.hpp>
+
+int main()
+{
+    auto pre = env::prefix("APP");
+    pre.register_deprecated("FEATURE", "The option 'APP_FEATURE' has been deprecated since version x.y. Please use SOMETHING instead.");
+}
+```
 
 ### Prefixless Environment Variables
 

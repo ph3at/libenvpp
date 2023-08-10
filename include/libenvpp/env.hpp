@@ -330,6 +330,14 @@ class prefix {
 		return registration_option_helper<T, true>(name, options);
 	}
 
+	void register_deprecated(const std::string_view name, const std::string_view deprecation_message)
+	{
+		std::string dm{deprecation_message};
+		m_registered_vars.push_back(detail::variable_data{name, false, [dm](const std::string_view) -> std::any {
+			throw validation_error(dm);
+		}});
+	}
+
 	template <typename T, bool IsRequired, typename U = T>
 	void set_for_testing(const variable_id<T, IsRequired>& var_id, const U& value)
 	{
