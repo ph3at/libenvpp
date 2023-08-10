@@ -18,6 +18,7 @@ This library provides a modern, platform independent, type-safe way of handling 
   - [Option Variables](#option-variables)
     - [Option Variables - Code](#option-variables---code)
   - [Deprecated Variables](#deprecated-variables)
+    - [Deprecated Variables - Code](#deprecated-variables---code)
   - [Prefixless Environment Variables](#prefixless-environment-variables)
     - [Prefixless Environment Variables - Code](#prefixless-environment-variables---code)
 - [Error Handling](#error-handling)
@@ -363,6 +364,10 @@ int main()
     pre.register_deprecated("FEATURE", "The option 'APP_FEATURE' has been deprecated since version x.y. Please use SOMETHING instead.");
 }
 ```
+
+#### Deprecated Variables - Code
+
+For a full code example see [examples/libenvpp_deprecated_variable_example.cpp](examples/libenvpp_deprecated_variable_example.cpp).
 
 ### Prefixless Environment Variables
 
