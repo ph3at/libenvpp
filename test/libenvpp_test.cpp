@@ -1019,6 +1019,7 @@ TEST_CASE("Invalidated prefix throws", "[libenvpp]")
 	CHECK_THROWS_AS(pre.register_required_range<int>("INT2", 0, 1), invalidated_prefix);
 	CHECK_THROWS_AS(pre.register_option<int>("INT2", {0}), invalidated_prefix);
 	CHECK_THROWS_AS(pre.register_required_option<int>("INT2", {0}), invalidated_prefix);
+	CHECK_THROWS_AS(pre.register_deprecated("DEPRECATED", "deprecated"), invalidated_prefix);
 	CHECK_THROWS_AS(pre.set_for_testing(var_id, 4), invalidated_prefix);
 	CHECK_THROWS_AS(pre.parse_and_validate(), invalidated_prefix);
 	CHECK_THROWS_AS(pre.help_message(), invalidated_prefix);

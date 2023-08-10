@@ -333,6 +333,7 @@ class prefix {
 
 	void register_deprecated(const std::string_view name, const std::string_view deprecation_message)
 	{
+		throw_if_invalid();
 		std::string dm{deprecation_message};
 		m_registered_vars.push_back(detail::variable_data{
 		    name, false, [dm](const std::string_view) -> std::any { throw validation_error(dm); }});
