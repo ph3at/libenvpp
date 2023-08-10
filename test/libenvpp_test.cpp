@@ -1184,4 +1184,23 @@ TEST_CASE("Errors yield default value with get_or", "[libenvpp][get]")
 	}
 }
 
+TEST_CASE("Deprecated environment variables work as expected", "[libenvpp][deprecated]")
+{
+	auto pre = env::prefix("TEST");
+	pre.register_deprecated("DEPRECATED", "The option 'TEST_DEPRECATED' has been deprecated since v1.0. Use 'TEST_NONDEPRECATED'.");
+
+	SECTION("Nothing happens when not set")
+	{
+		auto parsed = pre.parse_and_validate();
+		CHECK(parsed.ok());
+	}
+
+	SECTION("Deprecation error when set")
+	{
+		auto parsed = pre.parse_and_validate({{"TEST_DEPRECATED","bla"}});
+		CHECK_FALSE(parsed.ok());
+		CHECK_THAT(parsed.error_message(), ContainsSubstring("'TEST_DEPRECATED' has been deprecated"));
+	}
+}
+
 } // namespace env
