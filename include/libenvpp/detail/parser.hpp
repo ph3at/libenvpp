@@ -69,7 +69,7 @@ template <typename T>
 		}
 	} else if constexpr (is_stringstream_constructible_v<T>) {
 		auto stream = std::istringstream(std::string(str));
-		T parsed;
+		auto parsed = T();
 		try {
 			if constexpr (std::is_same_v<T, bool>) {
 				stream >> std::boolalpha >> parsed;
