@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -54,6 +55,34 @@ inline constexpr auto is_stringstream_constructible_v = is_stringstream_construc
 
 //////////////////////////////////////////////////////////////////////////
 
+[[nodiscard]] static inline bool parse_bool(const std::string_view str)
+{
+	constexpr auto to_lower_char = [](const char c) -> char {
+		if ('A' <= c && c <= 'Z') {
+			return c + ('a' - 'A');
+		} else {
+			return c;
+		}
+	};
+
+	constexpr auto equal_case_insensitive = [to_lower_char](const std::string_view a, const std::string_view b) {
+		return std::equal(a.begin(), a.end(), b.begin(), b.end(),
+		                  [to_lower_char](const char a, const char b) { return to_lower_char(a) == to_lower_char(b); });
+	};
+
+	if (equal_case_insensitive(str, "true")  //
+	    || equal_case_insensitive(str, "on") //
+	    || equal_case_insensitive(str, "yes")) {
+		return true;
+	} else if (equal_case_insensitive(str, "false")  //
+	           || equal_case_insensitive(str, "off") //
+	           || equal_case_insensitive(str, "no")) {
+		return false;
+	} else {
+		throw parser_error{fmt::format("Failed to parse '{}' as boolean", str)};
+	}
+}
+
 template <typename T>
 [[nodiscard]] T construct_from_string(const std::string_view str)
 {
@@ -72,10 +101,12 @@ template <typename T>
 		auto parsed = T();
 		try {
 			if constexpr (std::is_same_v<T, bool>) {
-				stream >> std::boolalpha >> parsed;
+				stream >> parsed;
 				if (stream.fail()) {
-					stream.clear();
-					stream >> std::noboolalpha >> parsed;
+					stream = std::istringstream(std::string(str));
+					std::string bool_str;
+					stream >> bool_str;
+					parsed = parse_bool(bool_str);
 				}
 			} else {
 				stream >> parsed;

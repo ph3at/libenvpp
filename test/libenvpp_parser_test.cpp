@@ -164,9 +164,26 @@ TEST_CASE("Parsing well-formed input of built-in type", "[libenvpp_parser]")
 	SECTION("Primitive types")
 	{
 		test_parser<bool>("0", false);
+		test_parser<bool>("00", false);
 		test_parser<bool>("1", true);
 		test_parser<bool>("false", false);
 		test_parser<bool>("true", true);
+		test_parser<bool>("False", false);
+		test_parser<bool>("True", true);
+		test_parser<bool>("FALSE", false);
+		test_parser<bool>("TRUE", true);
+		test_parser<bool>("off", false);
+		test_parser<bool>("on", true);
+		test_parser<bool>("Off", false);
+		test_parser<bool>("On", true);
+		test_parser<bool>("OFF", false);
+		test_parser<bool>("ON", true);
+		test_parser<bool>("no", false);
+		test_parser<bool>("yes", true);
+		test_parser<bool>("No", false);
+		test_parser<bool>("Yes", true);
+		test_parser<bool>("NO", false);
+		test_parser<bool>("YES", true);
 
 		test_parser<char>("0", '0');
 		test_parser<char>("a", 'a');
@@ -231,6 +248,9 @@ TEST_CASE("Parsing well-formed input of built-in type", "[libenvpp_parser]")
 	SECTION("Leading and trailing whitespaces")
 	{
 		test_parser<bool>(" 1", true);
+		test_parser<bool>("0 ", false);
+		test_parser<bool>(" TrUe ", true);
+		test_parser<bool>(" \r \t \n oFf \r \t \n ", false);
 		test_parser<char>("a ", 'a');
 		test_parser<short>(" -12345 ", -12345);
 		test_parser<unsigned short>("\t65000", 65000);
@@ -282,8 +302,10 @@ TEST_CASE("Parsing ill-formed input of primitive type", "[libenvpp_parser]")
 	test_parser_error<bool>("");
 	test_parser_error<bool>(" ");
 	test_parser_error<bool>("a");
-	test_parser_error<bool>("True");
-	test_parser_error<bool>("False");
+	test_parser_error<bool>("-1");
+	test_parser_error<bool>("2");
+	test_parser_error<bool>("yas");
+	test_parser_error<bool>("nope");
 
 	test_parser_error<short>("");
 	test_parser_error<short>(" ");
