@@ -59,7 +59,11 @@ std::optional<std::wstring> convert_string(const std::string& str)
 			}
 		}
 		if (!var_name_value[0].empty()) {
-			env_map[*convert_string(var_name_value[0])] = *convert_string(var_name_value[1]);
+			auto key = convert_string(var_name_value[0]);
+			auto value = convert_string(var_name_value[1]);
+			if(key && value) {
+				env_map[*key] = *value;
+			}
 		}
 	}
 
@@ -72,6 +76,7 @@ std::optional<std::wstring> convert_string(const std::string& str)
 [[nodiscard]] std::optional<std::string> get_environment_variable(const std::string_view name)
 {
 	const auto var_name = convert_string(std::string(name));
+	if(!var_name) return {};
 	const auto buffer_size = GetEnvironmentVariableW(var_name->c_str(), nullptr, 0);
 	if (buffer_size == 0) {
 		return {};
@@ -85,15 +90,18 @@ std::optional<std::wstring> convert_string(const std::string& str)
 
 void set_environment_variable(const std::string_view name, const std::string_view value)
 {
-	[[maybe_unused]] const auto env_var_was_set = SetEnvironmentVariableW(convert_string(std::string(name))->c_str(),
-	                                                                      convert_string(std::string(value))->c_str());
+	auto key = convert_string(std::string(name));
+	auto val = convert_string(std::string(value));
+	if(!key || !val) throw std::runtime_error("libenvpp: set_environment_variable failed in string conversion");
+	[[maybe_unused]] const auto env_var_was_set = SetEnvironmentVariableW(key->c_str(), val->c_str());
 	LIBENVPP_CHECK(env_var_was_set);
 }
 
 void delete_environment_variable(const std::string_view name)
 {
-	[[maybe_unused]] const auto env_var_was_deleted =
-	    SetEnvironmentVariableW(convert_string(std::string(name))->c_str(), nullptr);
+	auto key = convert_string(std::string(name));
+	if(!key) throw std::runtime_error("libenvpp: delete_environment_variable failed in string conversion");
+	[[maybe_unused]] const auto env_var_was_deleted = SetEnvironmentVariableW(key->c_str(), nullptr);
 	LIBENVPP_CHECK(env_var_was_deleted);
 }
 
