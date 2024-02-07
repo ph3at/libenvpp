@@ -14,6 +14,9 @@ namespace env::detail {
 
 std::optional<std::string> convert_string(const std::wstring& str)
 {
+	if (str.empty()) {
+		return "";
+	}
 	const auto buffer_size =
 	    WideCharToMultiByte(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), nullptr, 0, nullptr, nullptr);
 	if (buffer_size == 0) {
@@ -28,6 +31,9 @@ std::optional<std::string> convert_string(const std::wstring& str)
 
 std::optional<std::wstring> convert_string(const std::string& str)
 {
+	if (str.empty()) {
+		return L"";
+	}
 	const auto buffer_size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), nullptr, 0);
 	if (buffer_size == 0) {
 		return {};
@@ -61,7 +67,7 @@ std::optional<std::wstring> convert_string(const std::string& str)
 		if (!var_name_value[0].empty()) {
 			auto key = convert_string(var_name_value[0]);
 			auto value = convert_string(var_name_value[1]);
-			if(key && value) {
+			if (key && value) {
 				env_map[*key] = *value;
 			}
 		}
@@ -76,7 +82,9 @@ std::optional<std::wstring> convert_string(const std::string& str)
 [[nodiscard]] std::optional<std::string> get_environment_variable(const std::string_view name)
 {
 	const auto var_name = convert_string(std::string(name));
-	if(!var_name) return {};
+	if (!var_name) {
+		return {};
+	}
 	const auto buffer_size = GetEnvironmentVariableW(var_name->c_str(), nullptr, 0);
 	if (buffer_size == 0) {
 		return {};
@@ -84,7 +92,8 @@ std::optional<std::wstring> convert_string(const std::string& str)
 	// -1 because std::string already contains implicit null terminator
 	auto value = std::wstring(buffer_size - 1, L'\0');
 	[[maybe_unused]] const auto env_var_got = GetEnvironmentVariableW(var_name->c_str(), value.data(), buffer_size);
-	LIBENVPP_CHECK(env_var_got != 0);
+	// An empty string will have buffer_size == 1 and thus read 0, which is not an error.
+	LIBENVPP_CHECK(env_var_got != 0 || buffer_size == 1);
 	return convert_string(value);
 }
 
@@ -92,7 +101,9 @@ void set_environment_variable(const std::string_view name, const std::string_vie
 {
 	auto key = convert_string(std::string(name));
 	auto val = convert_string(std::string(value));
-	if(!key || !val) throw std::runtime_error("libenvpp: set_environment_variable failed in string conversion");
+	if (!key || !val) {
+		throw std::runtime_error("libenvpp: set_environment_variable failed in string conversion");
+	}
 	[[maybe_unused]] const auto env_var_was_set = SetEnvironmentVariableW(key->c_str(), val->c_str());
 	LIBENVPP_CHECK(env_var_was_set);
 }
@@ -100,7 +111,9 @@ void set_environment_variable(const std::string_view name, const std::string_vie
 void delete_environment_variable(const std::string_view name)
 {
 	auto key = convert_string(std::string(name));
-	if(!key) throw std::runtime_error("libenvpp: delete_environment_variable failed in string conversion");
+	if (!key) {
+		throw std::runtime_error("libenvpp: delete_environment_variable failed in string conversion");
+	}
 	[[maybe_unused]] const auto env_var_was_deleted = SetEnvironmentVariableW(key->c_str(), nullptr);
 	LIBENVPP_CHECK(env_var_was_deleted);
 }

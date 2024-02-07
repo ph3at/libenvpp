@@ -23,6 +23,17 @@ TEST_CASE("Converting wide-char to multi-byte", "[libenvpp_env]")
 		CHECK_THAT(*multi_byte_str, Equals(output));
 	}
 
+	SECTION("Empty input")
+	{
+		constexpr auto input = L"";
+		constexpr auto output = "";
+
+		const auto wide_char_str = std::wstring(input);
+		const auto multi_byte_str = convert_string(wide_char_str);
+		REQUIRE(multi_byte_str.has_value());
+		CHECK_THAT(*multi_byte_str, Equals(output));
+	}
+
 	SECTION("Invalid input parsed at least up to invalid character")
 	{
 		constexpr auto input = L"foo \xd800 bar";
@@ -51,6 +62,17 @@ TEST_CASE("Converting multi-byte to wide-char", "[libenvpp_env]")
 	{
 		constexpr auto input = "foo 🍌 bar";
 		constexpr auto output = L"foo 🍌 bar";
+
+		const auto multi_byte_str = std::string(input);
+		const auto wide_char_str = convert_string(multi_byte_str);
+		REQUIRE(wide_char_str.has_value());
+		CHECK(*wide_char_str == output); // Catch2 does not have matcher support for wide-chars
+	}
+
+	SECTION("Empty input")
+	{
+		constexpr auto input = "";
+		constexpr auto output = L"";
 
 		const auto multi_byte_str = std::string(input);
 		const auto wide_char_str = convert_string(multi_byte_str);
@@ -227,6 +249,24 @@ TEST_CASE("Character encoding for variable values", "[libenvpp_env]")
 	{
 		constexpr auto test_var_name = "LIBENVPP_TESTING_BANANA";
 		constexpr auto test_var_value = "->🍌<-";
+
+		const auto _ = set_scoped_environment_variable{test_var_name, test_var_value};
+
+		const auto test_var = get_environment_variable(test_var_name);
+		REQUIRE(test_var.has_value());
+		CHECK_THAT(*test_var, Equals(test_var_value));
+
+		const auto environment = get_environment();
+		REQUIRE_FALSE(environment.empty());
+
+		REQUIRE(environment.find(test_var_name) != environment.end());
+		CHECK_THAT(environment.at(test_var_name), Equals(test_var_value));
+	}
+
+	SECTION("Empty input")
+	{
+		constexpr auto test_var_name = "LIBENVPP_TESTING_BANANA";
+		constexpr auto test_var_value = "";
 
 		const auto _ = set_scoped_environment_variable{test_var_name, test_var_value};
 
