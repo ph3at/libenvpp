@@ -15,7 +15,7 @@ namespace env::detail {
 std::optional<std::string> convert_string(const std::wstring& str)
 {
 	if (str.empty()) {
-		return "";
+		return std::string();
 	}
 	const auto buffer_size =
 	    WideCharToMultiByte(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), nullptr, 0, nullptr, nullptr);
@@ -32,7 +32,7 @@ std::optional<std::string> convert_string(const std::wstring& str)
 std::optional<std::wstring> convert_string(const std::string& str)
 {
 	if (str.empty()) {
-		return L"";
+		return std::wstring();
 	}
 	const auto buffer_size = MultiByteToWideChar(CP_UTF8, 0, str.c_str(), static_cast<int>(str.length()), nullptr, 0);
 	if (buffer_size == 0) {
