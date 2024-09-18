@@ -49,3 +49,33 @@ jobs:
     - name: Run tests
       working-directory: ${{ github.workspace }}/build
       run: ctest -C ${{ matrix.build-type }}
+
+  build-and-test-mingw:
+    strategy:
+      matrix:
+        build-type: [Debug, Release]
+        compiler: [g++, clang++]
+        os: [windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: msys2/setup-msys2@v2
+      with:
+        install: mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc mingw-w64-x86_64-clang
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Configure CMake
+      shell: msys2 {0}
+      run: cmake -B "${{ github.workspace }}/build" -DCMAKE_BUILD_TYPE=${{ matrix.build-type }} -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
+
+    - name: Build
+      shell: msys2 {0}
+      run: cmake --build "${{ github.workspace }}/build" --config ${{ matrix.build-type }}
+
+    - name: Run tests
+      shell: msys2 {0}
+      working-directory: "${{ github.workspace }}/build"
+      run: ctest -C ${{ matrix.build-type }}
