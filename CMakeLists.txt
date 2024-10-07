@@ -54,22 +54,33 @@ function(libenvpp_set_compiler_parameters TARGET)
 endfunction()
 
 # External dependencies.
+include(FetchContent)
+
 if(LIBENVPP_INSTALL)
 	set(FMT_INSTALL ON CACHE BOOL "" FORCE)
 endif()
-include(FetchContent)
-FetchContent_Declare(fmt
-	GIT_REPOSITORY https://github.com/fmtlib/fmt.git
-	GIT_TAG 11.0.2
-)
-FetchContent_MakeAvailable(fmt)
+
+macro(fetch_content_from_submodule DEPNAME RELPATH)
+	# Dependencies may have already been satisfied by the parent project, in this case the already provided dependency will be used.
+	# The parent project is responsible for ensuring that the provided dependency version is compatible.
+	if(${DEPNAME}_FOUND OR TARGET ${DEPNAME})
+		message(STATUS "Depndency ${DEPNAME} already provided, reusing it")
+	else()
+		message(STATUS "Fetching ${DEPNAME} from submodule")
+		if(NOT EXISTS "${PROJECT_SOURCE_DIR}/${RELPATH}/CMakeLists.txt")
+			message(FATAL_ERROR "The git submodule ${RELPATH} is missing.\nTry running `git submodule update --init`")
+		endif()
+		FetchContent_Declare(${DEPNAME}
+			URL "${PROJECT_SOURCE_DIR}/${RELPATH}"
+		)
+		FetchContent_MakeAvailable(${DEPNAME})
+	endif()
+endmacro()
+
+fetch_content_from_submodule(fmt external/fmt)
 
 if(LIBENVPP_TESTS)
-	FetchContent_Declare(Catch2
-		GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-		GIT_TAG v3.7.1
-	)
-	FetchContent_MakeAvailable(Catch2)
+	fetch_content_from_submodule(Catch2 external/Catch2)
 	list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 endif()
 

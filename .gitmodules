@@ -1,0 +1,6 @@
+[submodule "external/fmt"]
+	path = external/fmt
+	url = git@github.com:fmtlib/fmt.git
+[submodule "external/Catch2"]
+	path = external/Catch2
+	url = git@github.com:catchorg/Catch2.git
