@@ -145,6 +145,8 @@ endif()
 # Installation target.
 if(LIBENVPP_INSTALL)
 	# Libenvpp installation.
+	include(CMakePackageConfigHelpers)
+
 	set(LIBENVPP_PROJECT_CONFIG_OUT "${CMAKE_CURRENT_BINARY_DIR}/libenvpp-config.cmake")
 	set(LIBENVPP_VERSION_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/libenvpp-config-version.cmake")
 	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
