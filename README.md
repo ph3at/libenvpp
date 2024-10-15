@@ -528,7 +528,7 @@ Libenvpp can be integrated into a cmake project (`myproject`) using the FetchCon
 set(LIBENVPP_INSTALL ON CACHE BOOL "" FORCE) # If installation is desired.
 FetchContent_Declare(libenvpp
     GIT_REPOSITORY https://github.com/ph3at/libenvpp.git
-    GIT_TAG v1.4.3
+    GIT_TAG v1.4.4
 )
 FetchContent_MakeAvailable(libenvpp)
 
