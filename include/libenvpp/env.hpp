@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 
 #include <libenvpp/detail/edit_distance.hpp>
 #include <libenvpp/detail/environment.hpp>
@@ -58,6 +59,20 @@ class variable_data {
 	friend class ::env::parsed_and_validated_prefix;
 };
 
+template <typename T>
+std::pair<std::vector<std::string>, std::vector<T>>
+extract_options(const std::initializer_list<std::pair<std::string, T>>& options)
+{
+	std::vector<std::string> option_strings;
+	std::vector<T> option_values;
+	option_strings.reserve(options.size());
+	option_values.reserve(options.size());
+	for (const auto& [str, val] : options) {
+		option_strings.push_back(str);
+		option_values.push_back(val);
+	}
+	return {option_strings, option_values};
+}
 } // namespace detail
 
 template <typename T, bool IsRequired>
@@ -326,9 +341,25 @@ class prefix {
 	}
 
 	template <typename T>
+	[[nodiscard]] auto register_option(const std::string_view name,
+	                                   const std::initializer_list<std::pair<std::string, T>> options)
+	{
+		const auto [option_strings, option_values] = detail::extract_options(options);
+		return registration_option_helper<T, false, true>(name, option_values, option_strings);
+	}
+
+	template <typename T>
 	[[nodiscard]] auto register_required_option(const std::string_view name, const std::initializer_list<T> options)
 	{
-		return registration_option_helper<T, true>(name, options);
+		return registration_option_helper<T, true, false>(name, options);
+	}
+
+	template <typename T>
+	[[nodiscard]] auto register_required_option(const std::string_view name,
+	                                            const std::initializer_list<std::pair<std::string, T>> options)
+	{
+		const auto [option_strings, option_values] = detail::extract_options(options);
+		return registration_option_helper<T, true, true>(name, option_values, option_strings);
 	}
 
 	void register_deprecated(const std::string_view name, const std::string_view deprecation_message)
@@ -426,8 +457,9 @@ class prefix {
 		return registration_helper<T, IsRequired>(name, std::move(parser_and_validator));
 	}
 
-	template <typename T, bool IsRequired>
-	[[nodiscard]] auto registration_option_helper(const std::string_view name, const std::initializer_list<T> options)
+	template <typename T, bool IsRequired, bool SimpleParsing = false>
+	[[nodiscard]] auto registration_option_helper(const std::string_view name, const std::vector<T> options,
+	                                              const std::vector<std::string> option_strings = {})
 	{
 		if (options.size() == 0) {
 			throw empty_option{fmt::format("No options provided for '{}'", get_full_env_var_name(name))};
@@ -437,8 +469,24 @@ class prefix {
 		if (options_set.size() != options.size()) {
 			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", get_full_env_var_name(name))};
 		}
-		const auto parser_and_validator = [options = std::move(options_set)](const std::string_view str) {
-			const auto value = default_parser<T>{}(str);
+		const auto parser_and_validator = [options = std::move(options),
+		                                   strings = std::move(option_strings)](const std::string_view str) {
+			const auto value = [&]() {
+				if constexpr(SimpleParsing) {
+					if(strings.size() != options.size()) {
+						throw option_error{fmt::format("Option strings must be provided for simple option parsing")};
+					}
+					const auto it = std::find(strings.begin(), strings.end(), str);
+					if (it != strings.end()) {
+						return options.at(std::distance(strings.begin(), it));
+					} else {
+						throw option_error{fmt::format("Unrecognized option '{}', should be one of [{}]", str,
+						                               fmt::join(strings, ", "))};
+					}
+				} else {
+					return default_parser<T>{}(str);
+				}
+			}();
 			default_validator<T>{}(value);
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
 				throw option_error{fmt::format("Unrecognized option '{}'", str)};
