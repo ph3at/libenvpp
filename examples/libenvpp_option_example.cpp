@@ -36,12 +36,21 @@ struct default_parser<option> {
 };
 } // namespace env
 
+enum class simple_option {
+	opt_a,
+	opt_b,
+	opt_c,
+};
+
 int main()
 {
 	auto pre = env::prefix("OPTION");
 
 	const auto option_id =
 	    pre.register_option<option>("CHOICE", {option::first_choice, option::second_choice, option::third_choice});
+
+	const auto simple_option_id = pre.register_option<simple_option>(
+	    "SIMPLE", {{"opt_a", simple_option::opt_a}, {"opt_b", simple_option::opt_b}, {"opt_c", simple_option::opt_c}});
 
 	const auto parsed_and_validated_pre = pre.parse_and_validate();
 
@@ -61,6 +70,21 @@ int main()
 			break;
 		case option::default_choice:
 			std::cout << "default_choice" << std::endl;
+			break;
+		}
+
+		const auto simple_opt = parsed_and_validated_pre.get_or(simple_option_id, simple_option::opt_a);
+
+		std::cout << "Simple option: ";
+		switch (simple_opt) {
+		case simple_option::opt_a:
+			std::cout << "opt_a" << std::endl;
+			break;
+		case simple_option::opt_b:
+			std::cout << "opt_b" << std::endl;
+			break;
+		case simple_option::opt_c:
+			std::cout << "opt_c" << std::endl;
 			break;
 		}
 	} else {
