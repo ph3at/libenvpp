@@ -72,7 +72,10 @@ enum class testing_simple_option {
 
 class option_var_fixture {
   public:
-	option_var_fixture() : m_var("LIBENVPP_TESTING_OPTION", "SECOND_OPTION"), m_simple("LIBENVPP_TESTING_SIMPLE_OPTION", "OPT_A") {}
+	option_var_fixture()
+	    : m_var("LIBENVPP_TESTING_OPTION", "SECOND_OPTION"), m_simple("LIBENVPP_TESTING_SIMPLE_OPTION", "OPT_A")
+	{
+	}
 
   private:
 	detail::set_scoped_environment_variable m_var;
@@ -116,7 +119,8 @@ TEST_CASE_METHOD(option_var_fixture, "Retrieving option environment variable", "
 {
 	auto pre = env::prefix("LIBENVPP_TESTING");
 	const auto option_id = pre.register_variable<testing_option>("OPTION");
-	const auto simple_option_id = pre.register_option<testing_simple_option>("SIMPLE_OPTION", {{"OPT_A", testing_simple_option::OPT_A}, {"OPT_B", testing_simple_option::OPT_B}});
+	const auto simple_option_id = pre.register_option<testing_simple_option>(
+	    "SIMPLE_OPTION", {{"OPT_A", testing_simple_option::OPT_A}, {"OPT_B", testing_simple_option::OPT_B}});
 	auto parsed_and_validated_pre = pre.parse_and_validate();
 	REQUIRE(parsed_and_validated_pre.ok());
 	const auto option_val = parsed_and_validated_pre.get(option_id);
@@ -132,11 +136,14 @@ TEST_CASE("Parsing failure with 'simple' option handling", "[libenvpp]")
 	const auto _ = detail::set_scoped_environment_variable{"LIBENVPP_TESTING_SIMPLE_OPTION", "INVALID_OPTION"};
 
 	auto pre = env::prefix("LIBENVPP_TESTING");
-	(void)pre.register_option<testing_simple_option>("SIMPLE_OPTION", {{"OPT_A", testing_simple_option::OPT_A}, {"OPT_B", testing_simple_option::OPT_B}});
+	(void)pre.register_option<testing_simple_option>(
+	    "SIMPLE_OPTION", {{"OPT_A", testing_simple_option::OPT_A}, {"OPT_B", testing_simple_option::OPT_B}});
 	auto parsed_and_validated_pre = pre.parse_and_validate();
 	REQUIRE_FALSE(parsed_and_validated_pre.ok());
-	CHECK_THAT(parsed_and_validated_pre.error_message(),
-	           ContainsSubstring("'LIBENVPP_TESTING_SIMPLE_OPTION': Unrecognized option 'INVALID_OPTION', should be one of [OPT_A, OPT_B]"));
+	CHECK_THAT(
+	    parsed_and_validated_pre.error_message(),
+	    ContainsSubstring(
+	        "'LIBENVPP_TESTING_SIMPLE_OPTION': Unrecognized option 'INVALID_OPTION', should be one of [OPT_A, OPT_B]"));
 }
 
 struct user_parsable_type {

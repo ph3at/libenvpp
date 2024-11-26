@@ -472,8 +472,8 @@ class prefix {
 		const auto parser_and_validator = [options = std::move(options),
 		                                   strings = std::move(option_strings)](const std::string_view str) {
 			const auto value = [&]() {
-				if constexpr(SimpleParsing) {
-					if(strings.size() != options.size()) {
+				if constexpr (SimpleParsing) {
+					if (strings.size() != options.size()) {
 						throw option_error{fmt::format("Option strings must be provided for simple option parsing")};
 					}
 					const auto it = std::find(strings.begin(), strings.end(), str);
