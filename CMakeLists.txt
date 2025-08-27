@@ -33,7 +33,7 @@ include(cmake/libenvpp_mt_utils.cmake)
 function(libenvpp_set_compiler_parameters TARGET)
 	set_target_properties(${TARGET} PROPERTIES
 		VERSION ${LIBENVPP_VERSION}
-		CXX_STANDARD 17
+		CXX_STANDARD 23
 		CXX_EXTENSIONS OFF
 	)
 	target_compile_options(${TARGET} PRIVATE
@@ -77,8 +77,6 @@ macro(fetch_content_from_submodule DEPNAME RELPATH)
 	endif()
 endmacro()
 
-fetch_content_from_submodule(fmt external/fmt)
-
 if(LIBENVPP_TESTS)
 	fetch_content_from_submodule(Catch2 external/Catch2)
 	list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
@@ -101,7 +99,6 @@ add_library(libenvpp STATIC ${LIBENVPP_SOURCES} ${LIBENVPP_INCLUDES})
 add_library(libenvpp::libenvpp ALIAS libenvpp)
 libenvpp_set_compiler_parameters(libenvpp)
 set_target_properties(libenvpp PROPERTIES PREFIX "")
-target_link_libraries(libenvpp PUBLIC fmt::fmt)
 target_include_directories(libenvpp PUBLIC
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>

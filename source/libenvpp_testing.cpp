@@ -1,8 +1,10 @@
+#include <format>
 #include <libenvpp/detail/testing.hpp>
 
-#include <fmt/core.h>
-
 #include <libenvpp/detail/errors.hpp>
+#include <string>
+#include <string_view>
+#include <unordered_map>
 
 namespace env {
 
@@ -28,7 +30,7 @@ scoped_test_environment::scoped_test_environment(const std::unordered_map<std::s
 {
 	for (const auto& [name, value] : m_environment) {
 		if (const auto it = detail::g_testing_environment.find(name); it != detail::g_testing_environment.end()) {
-			throw test_environment_error{fmt::format("The global test environment already contains the value '{}' for "
+			throw test_environment_error{std::format("The global test environment already contains the value '{}' for "
 			                                         "variable '{}', while trying to set it to '{}'",
 			                                         it->second, name, value)};
 		}

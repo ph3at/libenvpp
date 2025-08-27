@@ -1,13 +1,16 @@
+#include <format>
+#include <ios>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <string_view>
-#include <type_traits>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
-#include <fmt/core.h>
 
 #include <libenvpp/detail/parser.hpp>
+#include <libenvpp/detail/errors.hpp>
 
 namespace env::detail {
 
@@ -239,7 +242,7 @@ TEST_CASE("Parsing well-formed input of built-in type", "[libenvpp_parser]")
 		test_parser<std::string>("", "");
 	}
 
-	SECTION("Class types"){}
+	SECTION("Class types") {}
 	{
 		test_parser<std::string>("foo", "foo");
 		test_parser<std::string>("BAR", "BAR");
@@ -343,7 +346,7 @@ struct not_string_constructible_1 {
 struct not_string_constructible_2 {
 	not_string_constructible_2(const std::string_view str)
 	{
-		throw parser_error{fmt::format("Failed to construct '{}'", str)};
+		throw parser_error{std::format("Failed to construct '{}'", str)};
 	}
 };
 
@@ -369,7 +372,7 @@ std::istringstream& operator>>(std::istringstream&, not_stream_constructible_2&)
 struct not_stream_constructible_3 {};
 std::istringstream& operator>>(std::istringstream& stream, not_stream_constructible_3&)
 {
-	throw parser_error{fmt::format("Failed to construct '{}'", stream.str())};
+	throw parser_error{std::format("Failed to construct '{}'", stream.str())};
 }
 
 TEST_CASE("Parsing ill-formed input of user-defined type", "[libenvpp_parser]")

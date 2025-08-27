@@ -1,13 +1,16 @@
-#include <limits>
 #include <string>
 #include <string_view>
 #include <unordered_map>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/matchers/catch_matchers.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
-#include <fmt/core.h>
+#include <catch2/matchers/catch_matchers_string.hpp>
 
 #include <libenvpp/detail/environment.hpp>
+#include <libenvpp/detail/errors.hpp>
+#include <libenvpp/detail/get.hpp>
+#include <libenvpp/detail/testing.hpp>
 #include <libenvpp/env.hpp>
 
 namespace env {
@@ -74,12 +77,12 @@ TEST_CASE("Retrieving integer with get_or from testing environment", "[libenvpp_
 
 TEST_CASE("Multiple scoped test environments", "[libenvpp_testing]")
 {
-	const auto scoped_env1 = env::scoped_test_environment({
+	const auto scoped_env1 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
 	    {"LIBENVPP_TESTING1_INT", "42"},
 	    {"LIBENVPP_TESTING1_FLOAT", "3.1415"},
 	});
 
-	const auto scoped_env2 = env::scoped_test_environment({
+	const auto scoped_env2 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
 	    {"LIBENVPP_TESTING2_INT", "24"},
 	    {"LIBENVPP_TESTING2_FLOAT", "6.28318"},
 	});
@@ -115,7 +118,7 @@ TEST_CASE("Multiple scoped test environments", "[libenvpp_testing]")
 
 TEST_CASE("Duplicate test environment entries are detected", "[libenvpp_testing]")
 {
-	const auto scoped_env1 = env::scoped_test_environment({
+	const auto scoped_env1 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
 	    {"LIBENVPP_TESTING_INT", "42"},
 	    {"LIBENVPP_TESTING_FLOAT", "3.1415"},
 	});
@@ -157,7 +160,7 @@ TEST_CASE("Global testing environment is modified correctly", "[libenvpp_testing
 	};
 
 	{
-		const auto scoped_env1 = env::scoped_test_environment({
+		const auto scoped_env1 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
 		    {"LIBENVPP_TESTING1_INT", "42"},
 		    {"LIBENVPP_TESTING1_FLOAT", "3.1415"},
 		});
@@ -167,7 +170,7 @@ TEST_CASE("Global testing environment is modified correctly", "[libenvpp_testing
 		check_env2(false);
 
 		{
-			const auto scoped_env2 = env::scoped_test_environment({
+			const auto scoped_env2 = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
 			    {"LIBENVPP_TESTING2_INT", "24"},
 			    {"LIBENVPP_TESTING2_FLOAT", "6.28318"},
 			});
