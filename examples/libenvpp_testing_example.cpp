@@ -1,12 +1,15 @@
+#include "libenvpp/detail/testing.hpp"
+#include "libenvpp/env.hpp"
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
 
-#include <libenvpp/env.hpp>
+#include <string>
+#include <unordered_map>
 
 int main()
 {
-	const auto _ = env::scoped_test_environment({
+	const auto _ = env::scoped_test_environment(std::unordered_map<std::string, std::string>{
 	    {"MYPROG_LOG_FILE_PATH", "/dev/null"},
 	    {"MYPROG_NUM_THREADS", "8"},
 	});

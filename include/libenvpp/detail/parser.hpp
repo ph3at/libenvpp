@@ -4,13 +4,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <exception>
+#include <format>
 #include <sstream>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
-
-#include <fmt/core.h>
 
 #include <libenvpp/detail/errors.hpp>
 #include <libenvpp/detail/expected.hpp>
@@ -79,7 +78,7 @@ inline constexpr auto is_stringstream_constructible_v = is_stringstream_construc
 	           || equal_case_insensitive(str, "no")) {
 		return false;
 	} else {
-		throw parser_error{fmt::format("Failed to parse '{}' as boolean", str)};
+		throw parser_error{std::format("Failed to parse '{}' as boolean", str)};
 	}
 }
 
@@ -92,9 +91,9 @@ template <typename T>
 		} catch (const parser_error&) {
 			throw;
 		} catch (const std::exception& e) {
-			throw parser_error{fmt::format("String constructor failed for input '{}' with '{}'", str, e.what())};
+			throw parser_error{std::format("String constructor failed for input '{}' with '{}'", str, e.what())};
 		} catch (...) {
-			throw parser_error{fmt::format("String constructor failed for input '{}' with unknown error", str)};
+			throw parser_error{std::format("String constructor failed for input '{}' with unknown error", str)};
 		}
 	} else if constexpr (is_stringstream_constructible_v<T>) {
 		auto stream = std::istringstream(std::string(str));
@@ -117,15 +116,15 @@ template <typename T>
 		} catch (const parser_error&) {
 			throw;
 		} catch (const std::exception& e) {
-			throw parser_error{fmt::format("Stream operator>> failed for input '{}' with '{}'", str, e.what())};
+			throw parser_error{std::format("Stream operator>> failed for input '{}' with '{}'", str, e.what())};
 		} catch (...) {
-			throw parser_error{fmt::format("Stream operator>> failed for input '{}' with unknown error", str)};
+			throw parser_error{std::format("Stream operator>> failed for input '{}' with unknown error", str)};
 		}
 		if (stream.fail()) {
-			throw parser_error{fmt::format("Stream operator>> failed for input '{}'", str)};
+			throw parser_error{std::format("Stream operator>> failed for input '{}'", str)};
 		}
 		if (static_cast<std::size_t>(stream.tellg()) < str.size()) {
-			throw parser_error{fmt::format("Input '{}' was only parsed partially with remaining data '{}'", str,
+			throw parser_error{std::format("Input '{}' was only parsed partially with remaining data '{}'", str,
 			                               stream.str().substr(stream.tellg()))};
 		}
 		if constexpr (!std::is_same_v<T, bool> && std::is_unsigned_v<T>) {
@@ -137,10 +136,10 @@ template <typename T>
 			}
 			if (signed_stream.fail() || static_cast<std::size_t>(signed_stream.tellg()) < str.size()) {
 				throw parser_error{
-				    fmt::format("Failed to validate whether '{}' was correctly parsed as '{}'", str, parsed)};
+				    std::format("Failed to validate whether '{}' was correctly parsed as '{}'", str, parsed)};
 			}
 			if (signed_parsed < 0) {
-				throw parser_error{fmt::format("Cannot parse negative number '{}' as unsigned type", str)};
+				throw parser_error{std::format("Cannot parse negative number '{}' as unsigned type", str)};
 			}
 		}
 		return parsed;
@@ -187,19 +186,19 @@ template <typename T, typename ParserAndValidator>
 	try {
 		return expected_t{parser_and_validator(env_var_value)};
 	} catch (const parser_error& e) {
-		error_msg = fmt::format("Parser error for environment variable '{}': {}", env_var_name, e.what());
+		error_msg = std::format("Parser error for environment variable '{}': {}", env_var_name, e.what());
 	} catch (const validation_error& e) {
-		error_msg = fmt::format("Validation error for environment variable '{}': {}", env_var_name, e.what());
+		error_msg = std::format("Validation error for environment variable '{}': {}", env_var_name, e.what());
 	} catch (const range_error& e) {
-		error_msg = fmt::format("Range error for environment variable '{}': {}", env_var_name, e.what());
+		error_msg = std::format("Range error for environment variable '{}': {}", env_var_name, e.what());
 	} catch (const option_error& e) {
-		error_msg = fmt::format("Option error for environment variable '{}': {}", env_var_name, e.what());
+		error_msg = std::format("Option error for environment variable '{}': {}", env_var_name, e.what());
 	} catch (const std::exception& e) {
 		error_msg =
-		    fmt::format("Failed to parse or validate environment variable '{}' with: {}", env_var_name, e.what());
+		    std::format("Failed to parse or validate environment variable '{}' with: {}", env_var_name, e.what());
 	} catch (...) {
 		error_msg =
-		    fmt::format("Failed to parse or validate environment variable '{}' with unknown error", env_var_name);
+		    std::format("Failed to parse or validate environment variable '{}' with unknown error", env_var_name);
 	}
 	return expected_t{unexpected_t{error_msg}};
 }

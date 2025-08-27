@@ -2,9 +2,13 @@
 
 #include <algorithm>
 #include <any>
+#include <cassert>
 #include <cstddef>
+#include <format>
 #include <functional>
 #include <initializer_list>
+#include <iterator>
+#include <numeric>
 #include <optional>
 #include <set>
 #include <string>
@@ -12,9 +16,6 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#include <fmt/core.h>
-#include <fmt/ranges.h>
 
 #include <libenvpp/detail/edit_distance.hpp>
 #include <libenvpp/detail/environment.hpp>
@@ -129,7 +130,7 @@ class parsed_and_validated_prefix {
 		const auto& value = m_prefix.m_registered_vars[var_id.m_idx].m_value;
 		if constexpr (IsRequired) {
 			if (!value.has_value()) {
-				throw value_error{fmt::format("Variable '{}' does not hold a value",
+				throw value_error{std::format("Variable '{}' does not hold a value",
 				                              m_prefix.m_registered_vars[var_id.m_idx].m_name)};
 			}
 			return std::any_cast<T>(value);
@@ -242,7 +243,7 @@ class parsed_and_validated_prefix {
 
 		for (auto&& unused_var : find_unused_env_vars(environment)) {
 			m_warnings.emplace_back(-1, unused_var,
-			                        fmt::format("Prefix environment variable '{}' specified but unused", unused_var));
+			                        std::format("Prefix environment variable '{}' specified but unused", unused_var));
 		}
 	}
 
@@ -254,7 +255,7 @@ class parsed_and_validated_prefix {
 		}
 		auto msg = std::string();
 		for (std::size_t i = 0; i < errors_or_warnings.size(); ++i) {
-			msg += fmt::format("{:<7}: {}\n", message_type, errors_or_warnings[i].what());
+			msg += std::format("{:<7}: {}\n", message_type, errors_or_warnings[i].what());
 		}
 		return msg;
 	}
@@ -389,14 +390,14 @@ class prefix {
 		throw_if_invalid();
 
 		if (m_registered_vars.empty()) {
-			return fmt::format("There are no supported environment variables for the prefix '{}'\n", m_prefix_name);
+			return std::format("There are no supported environment variables for the prefix '{}'\n", m_prefix_name);
 		}
-		auto msg = fmt::format("Prefix '{}' supports the following {} environment variable(s):\n", m_prefix_name,
+		auto msg = std::format("Prefix '{}' supports the following {} environment variable(s):\n", m_prefix_name,
 		                       m_registered_vars.size());
 		for (std::size_t i = 0; i < m_registered_vars.size(); ++i) {
 			const auto& var = m_registered_vars[i];
 			const auto var_name = get_full_env_var_name(i);
-			msg += fmt::format("\t'{}' {}\n", var_name, var.m_is_required ? "required" : "optional");
+			msg += std::format("\t'{}' {}\n", var_name, var.m_is_required ? "required" : "optional");
 		}
 		return msg;
 	}
@@ -442,7 +443,7 @@ class prefix {
 	[[nodiscard]] auto registration_range_helper(const std::string_view name, const T min, const T max)
 	{
 		if (min > max) {
-			throw invalid_range{fmt::format("Invalid range [{}, {}] for '{}', min must be less or equal to max", min,
+			throw invalid_range{std::format("Invalid range [{}, {}] for '{}', min must be less or equal to max", min,
 			                                max, get_full_env_var_name(name))};
 		}
 
@@ -450,7 +451,7 @@ class prefix {
 			const auto value = default_parser<T>{}(str);
 			default_validator<T>{}(value);
 			if (value < min || value > max) {
-				throw range_error{fmt::format("Value {} outside of range [{}, {}]", value, min, max)};
+				throw range_error{std::format("Value {} outside of range [{}, {}]", value, min, max)};
 			}
 			return value;
 		};
@@ -462,26 +463,31 @@ class prefix {
 	                                              const std::vector<std::string> option_strings = {})
 	{
 		if (options.size() == 0) {
-			throw empty_option{fmt::format("No options provided for '{}'", get_full_env_var_name(name))};
+			throw empty_option{std::format("No options provided for '{}'", get_full_env_var_name(name))};
 		}
 
 		const auto options_set = std::set(options.begin(), options.end());
 		if (options_set.size() != options.size()) {
-			throw duplicate_option{fmt::format("Duplicate option specified for '{}'", get_full_env_var_name(name))};
+			throw duplicate_option{std::format("Duplicate option specified for '{}'", get_full_env_var_name(name))};
 		}
 		const auto parser_and_validator = [options = std::move(options),
 		                                   strings = std::move(option_strings)](const std::string_view str) {
 			const auto value = [&]() {
 				if constexpr (SimpleParsing) {
 					if (strings.size() != options.size()) {
-						throw option_error{fmt::format("Option strings must be provided for simple option parsing")};
+						throw option_error{std::format("Option strings must be provided for simple option parsing")};
 					}
 					const auto it = std::find(strings.begin(), strings.end(), str);
 					if (it != strings.end()) {
 						return options.at(std::distance(strings.begin(), it));
 					} else {
-						throw option_error{fmt::format("Unrecognized option '{}', should be one of [{}]", str,
-						                               fmt::join(strings, ", "))};
+						assert(strings.size() != 0);
+						throw option_error{
+						    std::format("Unrecognized option '{}', should be one of [{}]", str,
+						                std::accumulate(std::next(strings.begin()), strings.end(), strings[0],
+						                                [](const std::string& buffer, const std::string& element) {
+							                                return buffer + ", " + element;
+						                                }))};
 					}
 				} else {
 					return default_parser<T>{}(str);
@@ -489,7 +495,7 @@ class prefix {
 			}();
 			default_validator<T>{}(value);
 			if (std::all_of(options.begin(), options.end(), [&value](const auto& option) { return option != value; })) {
-				throw option_error{fmt::format("Unrecognized option '{}'", str)};
+				throw option_error{std::format("Unrecognized option '{}'", str)};
 			}
 			return value;
 		};

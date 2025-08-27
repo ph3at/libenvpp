@@ -1,6 +1,7 @@
-#include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <string>
+#include <unordered_map>
 
 #include <libenvpp/env.hpp>
 
@@ -29,5 +30,5 @@ int main()
 		std::cout << parsed_and_validated_pre.error_message();
 	}
 
-	return EXIT_SUCCESS;
+	return 0;
 }

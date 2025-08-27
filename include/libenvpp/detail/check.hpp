@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-
-#include <fmt/core.h>
+#include <format>
+#include <print>
 
 #ifndef LIBENVPP_STRINGIFY
 #define LIBENVPP_STRINGIFY_HELPER(expression) #expression
@@ -22,7 +22,7 @@ class check_failed : public std::runtime_error {
 #define LIBENVPP_CHECK(condition) \
 	do { \
 		if (!(condition)) { \
-			::fmt::print(stderr, "{}:{}: {}(): 'LIBENVPP_CHECK(" LIBENVPP_STRINGIFY(condition) ")' failed.", __FILE__, \
+			::std::print(stderr, "{}:{}: {}(): 'LIBENVPP_CHECK(" LIBENVPP_STRINGIFY(condition) ")' failed.", __FILE__, \
 			             __LINE__, __func__); \
 			::std::abort(); \
 		} \
@@ -32,7 +32,7 @@ class check_failed : public std::runtime_error {
 	do { \
 		if (!(condition)) { \
 			throw ::env::detail::check_failed{ \
-			    ::fmt::format("{}:{}: {}(): 'LIBENVPP_CHECK(" LIBENVPP_STRINGIFY(condition) ")' failed.", __FILE__, \
+			    ::std::format("{}:{}: {}(): 'LIBENVPP_CHECK(" LIBENVPP_STRINGIFY(condition) ")' failed.", __FILE__, \
 			                  __LINE__, __func__)}; \
 		} \
 	} while (false)

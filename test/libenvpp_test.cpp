@@ -1,3 +1,4 @@
+#include <format>
 #include <limits>
 #include <string>
 #include <string_view>
@@ -5,7 +6,6 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
 #include <catch2/matchers/catch_matchers_all.hpp>
-#include <fmt/core.h>
 
 #include <libenvpp/detail/environment.hpp>
 #include <libenvpp/env.hpp>
@@ -59,7 +59,7 @@ struct default_parser<testing_option> {
 		} else if (str == "THIRD_OPTION") {
 			value = testing_option::THIRD_OPTION;
 		} else {
-			throw parser_error{fmt::format("Cannot construct testing_option from '{}'", str)};
+			throw parser_error{std::format("Cannot construct testing_option from '{}'", str)};
 		}
 		return value;
 	}
