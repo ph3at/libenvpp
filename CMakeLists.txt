@@ -8,9 +8,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Determine if libenvpp is built as a subproject (using add_subdirectory).
-if (NOT DEFINED LIBENVPP_MASTER_PROJECT)
+if(NOT DEFINED LIBENVPP_MASTER_PROJECT)
 	set(LIBENVPP_MASTER_PROJECT OFF)
-	if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+
+	if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 		set(LIBENVPP_MASTER_PROJECT ON)
 	endif()
 endif()
@@ -61,15 +62,20 @@ if(LIBENVPP_INSTALL)
 endif()
 
 macro(fetch_content_from_submodule DEPNAME RELPATH)
+	# Check if dependency is available on the system.
+	find_package(${DEPNAME} QUIET)
+
 	# Dependencies may have already been satisfied by the parent project, in this case the already provided dependency will be used.
 	# The parent project is responsible for ensuring that the provided dependency version is compatible.
 	if(${DEPNAME}_FOUND OR TARGET ${DEPNAME})
-		message(STATUS "Depndency ${DEPNAME} already provided, reusing it")
+		message(STATUS "Dependency ${DEPNAME} version ${${DEPNAME}_VERSION} already provided in ${${DEPNAME}_DIR}, reusing it")
 	else()
 		message(STATUS "Fetching ${DEPNAME} from submodule")
+
 		if(NOT EXISTS "${PROJECT_SOURCE_DIR}/${RELPATH}/CMakeLists.txt")
 			message(FATAL_ERROR "The git submodule ${RELPATH} is missing.\nTry running `git submodule update --init`")
 		endif()
+
 		FetchContent_Declare(${DEPNAME}
 			URL "${PROJECT_SOURCE_DIR}/${RELPATH}"
 		)
@@ -134,6 +140,7 @@ endif()
 # Examples.
 if(LIBENVPP_EXAMPLES)
 	file(GLOB_RECURSE LIBENVPP_EXAMPLES_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp")
+
 	foreach(LIBENVPP_EXAMPLE_SOURCE ${LIBENVPP_EXAMPLES_SOURCES})
 		get_filename_component(LIBENVPP_EXAMPLE_TARGET ${LIBENVPP_EXAMPLE_SOURCE} NAME_WE)
 		add_executable(${LIBENVPP_EXAMPLE_TARGET} "${LIBENVPP_EXAMPLE_SOURCE}")
@@ -150,12 +157,13 @@ if(LIBENVPP_INSTALL)
 	set(LIBENVPP_PROJECT_CONFIG_OUT "${CMAKE_CURRENT_BINARY_DIR}/libenvpp-config.cmake")
 	set(LIBENVPP_VERSION_CONFIG_FILE "${CMAKE_CURRENT_BINARY_DIR}/libenvpp-config-version.cmake")
 	install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
-		DESTINATION include/
+		DESTINATION include
 	)
 	install(TARGETS libenvpp
 		EXPORT libenvpp
 		LIBRARY DESTINATION lib
 		ARCHIVE DESTINATION lib
+		INCLUDES DESTINATION include
 	)
 	install(EXPORT libenvpp
 		DESTINATION lib/cmake/libenvpp
