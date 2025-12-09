@@ -79,3 +79,18 @@ jobs:
       shell: msys2 {0}
       working-directory: "${{ github.workspace }}/build"
       run: ctest -C ${{ matrix.build-type }}
+
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install system fmt
+      run: sudo apt-get update && sudo apt-get install -y libfmt-dev
+
+    - name: Run integration tests
+      working-directory: ${{ github.workspace }}/cmake_integration_test
+      run: bash test_all.sh

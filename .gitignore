@@ -1,3 +1,7 @@
 /build*
 .vscode
 .cache
+
+/cmake_integration_test/build_*
+/cmake_integration_test/libenvpp_build_*
+/cmake_integration_test/test_install_*

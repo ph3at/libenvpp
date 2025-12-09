@@ -27,6 +27,7 @@ option(LIBENVPP_TESTS "Build libenvpp tests." ${LIBENVPP_MASTER_PROJECT})
 option(LIBENVPP_EXAMPLES "Build libenvpp examples." ${LIBENVPP_MASTER_PROJECT})
 option(LIBENVPP_CHECKS "Enable additional runtime checks in release (always on in debug or when tests are enabled)." OFF)
 option(LIBENVPP_INSTALL "Enable installation target for libenvpp." OFF)
+option(LIBENVPP_USE_SYSTEM_DEPS "Try to use system dependencies before falling back to submodules." OFF)
 
 include(cmake/libenvpp_mt_utils.cmake)
 
@@ -57,29 +58,41 @@ endfunction()
 # External dependencies.
 include(FetchContent)
 
-if(LIBENVPP_INSTALL)
-	set(FMT_INSTALL ON CACHE BOOL "" FORCE)
-endif()
-
 macro(fetch_content_from_submodule DEPNAME RELPATH)
-	# Check if dependency is available on the system.
-	find_package(${DEPNAME} QUIET)
+	set(${DEPNAME}_FROM_SUBMODULE FALSE)
 
-	# Dependencies may have already been satisfied by the parent project, in this case the already provided dependency will be used.
-	# The parent project is responsible for ensuring that the provided dependency version is compatible.
-	if(${DEPNAME}_FOUND OR TARGET ${DEPNAME})
-		message(STATUS "Dependency ${DEPNAME} version ${${DEPNAME}_VERSION} already provided in ${${DEPNAME}_DIR}, reusing it")
+	# Check if the target is already available from the parent project.
+	if(TARGET ${DEPNAME} OR TARGET ${DEPNAME}::${DEPNAME})
+		message(STATUS "Dependency ${DEPNAME} already provided by parent project, reusing it")
+		set(${DEPNAME}_FOUND TRUE)
 	else()
-		message(STATUS "Fetching ${DEPNAME} from submodule")
+		# Try system package if requested
+		if(LIBENVPP_USE_SYSTEM_DEPS)
+			find_package(${DEPNAME} QUIET)
 
-		if(NOT EXISTS "${PROJECT_SOURCE_DIR}/${RELPATH}/CMakeLists.txt")
-			message(FATAL_ERROR "The git submodule ${RELPATH} is missing.\nTry running `git submodule update --init`")
+			if(${DEPNAME}_FOUND OR TARGET ${DEPNAME}::${DEPNAME})
+				message(STATUS "Using system ${DEPNAME}")
+			endif()
 		endif()
 
-		FetchContent_Declare(${DEPNAME}
-			URL "${PROJECT_SOURCE_DIR}/${RELPATH}"
-		)
-		FetchContent_MakeAvailable(${DEPNAME})
+		if(NOT ${DEPNAME}_FOUND AND NOT TARGET ${DEPNAME}::${DEPNAME})
+			# Fallback to submodule
+			message(STATUS "Fetching ${DEPNAME} from submodule")
+
+			if(NOT EXISTS "${PROJECT_SOURCE_DIR}/${RELPATH}/CMakeLists.txt")
+				message(FATAL_ERROR "The git submodule ${RELPATH} is missing.\nTry running `git submodule update --init`")
+			endif()
+
+			if(LIBENVPP_INSTALL AND ${DEPNAME} STREQUAL "fmt")
+				set(FMT_INSTALL ON CACHE BOOL "" FORCE)
+			endif()
+
+			FetchContent_Declare(${DEPNAME}
+				URL "${PROJECT_SOURCE_DIR}/${RELPATH}"
+			)
+			FetchContent_MakeAvailable(${DEPNAME})
+			set(${DEPNAME}_FROM_SUBMODULE TRUE)
+		endif()
 	endif()
 endmacro()
 
