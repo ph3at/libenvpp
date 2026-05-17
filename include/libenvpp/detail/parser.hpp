@@ -55,7 +55,7 @@ inline constexpr auto is_stringstream_constructible_v = is_stringstream_construc
 
 //////////////////////////////////////////////////////////////////////////
 
-[[nodiscard]] static inline bool parse_bool(const std::string_view str)
+[[nodiscard]] inline bool parse_bool(const std::string_view str)
 {
 	constexpr auto to_lower_char = [](const char c) -> char {
 		if ('A' <= c && c <= 'Z') {
