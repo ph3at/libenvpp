@@ -1,6 +1,6 @@
 #include <libenvpp/detail/errors.hpp>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <libenvpp/detail/environment.hpp>
 

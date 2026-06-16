@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #ifndef LIBENVPP_STRINGIFY
 #define LIBENVPP_STRINGIFY_HELPER(expression) #expression

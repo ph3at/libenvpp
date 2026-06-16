@@ -10,7 +10,7 @@
 #include <type_traits>
 #include <utility>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <libenvpp/detail/errors.hpp>
 #include <libenvpp/detail/expected.hpp>

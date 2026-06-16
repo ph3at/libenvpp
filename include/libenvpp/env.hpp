@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fmt/ranges.h>
 
 #include <libenvpp/detail/edit_distance.hpp>
